@@ -15,3 +15,23 @@ export async function addRow(sheet, data) {
   });
   return res.json();
 }
+
+export async function loadAppState(key) {
+  const res = await fetch(`${API_URL}?mode=state&key=${encodeURIComponent(key)}`);
+  return res.json();
+}
+
+export async function saveAppState(key, value) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      mode: "state",
+      key,
+      value,
+    }),
+  });
+  return res.json();
+}
