@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/a/macros/skanarobotics.com/s/AKfycbw5fsb8QE5wnL6plSRIF8U9Q8roUZ00y6err07_T1zzltNcDLgqB8XNMrT9c1oWhHk3Pg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw5fsb8QE5wnL6plSRIF8U9Q8roUZ00y6err07_T1zzltNcDLgqB8XNMrT9c1oWhHk3Pg/exec";
 
 export async function fetchSheet(sheet) {
   const res = await fetch(`${API_URL}?sheet=${encodeURIComponent(sheet)}`);
