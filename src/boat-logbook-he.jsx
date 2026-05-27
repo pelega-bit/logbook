@@ -26,6 +26,7 @@ async function saveFleet(data) {
 }
 
 const STATIONS = ["ים", "בריכה", "דולב", "עמדה פרוסה 1", "עמדה פרוסה 2"];
+const SYNCED_STATIONS = new Set(["ים", "בריכה", "דולב"]);
 const STATION_COLORS = [
   { bg:"rgba(37,99,235,.2)",   border:"#3b82f6", color:"#60a5fa" },
   { bg:"rgba(147,197,253,.15)", border:"#7dd3fc", color:"#bae6fd" },
@@ -454,7 +455,7 @@ function SchedModal({ date, entry, onSave, onClose }) {
   );
 }
 
-function StationsView({ fleet, weekOffset, setWeekOffset, onAssign }) {
+function StationsView({ fleet, weekOffset, setWeekOffset, onAssign, isApprover, onApprove }) {
   const dates = getWeekDates(weekOffset);
   const todayStr = today();
   const stationSched = fleet.stationSchedule || {};
@@ -496,7 +497,16 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign }) {
                   </td>
                   {dates.slice(0,5).map(d=>{
                     const cell=(stationSched[station]||{})[d]||{};
-                    const jobs = cell.jobs || [{ boatId:"", subsystem:"", work:"" }];
+                    const manualJobs = cell.jobs || [];
+                    const manualIds = new Set(manualJobs.filter(j=>j.boatId).map(j=>j.boatId));
+                    const autoBoats = SYNCED_STATIONS.has(station)
+                      ? fleet.boats.filter(b=>{
+                          const dd=(b.schedule||{})[d]||{};
+                          const acts=dd.slots?.map(s=>s.activity).filter(Boolean)||(dd.activity?[dd.activity]:[]);
+                          return acts.some(a=>a===station) && !manualIds.has(b.id);
+                        }).map(b=>({boatId:b.id,subsystem:"",work:"",_auto:true}))
+                      : [];
+                    const jobs = [...autoBoats, ...manualJobs, ...(manualJobs.length===0&&autoBoats.length===0?[{boatId:"",subsystem:"",work:""}]:[])];
                     return (
                       <td key={d} className={d===todayStr?"today-col":""} style={{padding:"6px 8px",verticalAlign:"top"}}>
                         {jobs.map((job,ji)=>{
@@ -512,6 +522,16 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign }) {
                               paddingBottom: ji<jobs.length-1?8:0,
                               borderBottom: ji<jobs.length-1?"1px solid var(--navy3)":"none"
                             }}>
+                              {job._auto ? (
+                                <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0"}}>
+                                  <span style={{fontSize:10,color:"var(--slate)",opacity:.6}}>↩</span>
+                                  <span style={{
+                                    background:assignedBoat?getBoatColor(assignedBoat.name).bg:"transparent",
+                                    color:assignedBoat?getBoatColor(assignedBoat.name).color:"var(--slate)",
+                                    borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:500
+                                  }}>{assignedBoat?.name||""}</span>
+                                </div>
+                              ) : (<>
                               <select
                                 value={job.boatId||""}
                                 onChange={e=>{
@@ -559,11 +579,33 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign }) {
                                 onFocus={e=>e.target.style.border="1px solid var(--navy3)"}
                                 onBlur={e=>e.target.style.border="1px solid "+(job.work?"var(--navy3)":"transparent")}
                               />
+                              {job.status==="approved" ? (
+                                <div style={{display:"flex",alignItems:"center",gap:5,marginTop:6,padding:"3px 8px",background:"rgba(52,211,153,.1)",borderRadius:4}}>
+                                  <span style={{color:"#34d399",fontSize:11,fontWeight:600}}>✓ אושר</span>
+                                </div>
+                              ) : (
+                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:6}}>
+                                  <span style={{fontSize:10,color:"var(--slate)",fontStyle:"italic"}}>ממתין לאישור</span>
+                                  {isApprover && job.boatId && (
+                                    <button
+                                      onClick={()=>{
+                                        const realIdx=manualJobs.indexOf(job);
+                                        if(realIdx>=0) onApprove(station,d,realIdx);
+                                      }}
+                                      style={{padding:"3px 10px",background:"rgba(52,211,153,.15)",
+                                        border:"1px solid #34d399",borderRadius:4,color:"#34d399",
+                                        fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"var(--sans)"}}>
+                                      אשר ✓
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                              </>)}
                             </div>
                           );
                         })}
                         <button
-                          onClick={()=>onAssign(station,d,{...cell,jobs:[...jobs,{boatId:"",subsystem:"",work:""}]})}
+                          onClick={()=>onAssign(station,d,{...cell,jobs:[...(cell.jobs||[]),{boatId:"",subsystem:"",work:"",status:"pending"}]})}
                           style={{width:"100%",marginTop:4,padding:"3px",background:"transparent",
                             border:"1px dashed var(--navy3)",color:"var(--slate)",
                             fontSize:10,borderRadius:4,cursor:"pointer",fontFamily:"var(--sans)"}}
@@ -674,7 +716,16 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
                     </td>
                     {dates.slice(0,5).map(d=>{
                       const cell=(stSched[station]||{})[d]||{};
-                      const jobs=(cell.jobs||[]).filter(j=>j.boatId||j.work||j.subsystem);
+                      const manualJobs=(cell.jobs||[]).filter(j=>(j.boatId||j.work||j.subsystem)&&j.status==="approved");
+                      const manualIds4=new Set(manualJobs.filter(j=>j.boatId).map(j=>j.boatId));
+                      const autoJobs4=SYNCED_STATIONS.has(station)
+                        ? fleet.boats.filter(b=>{
+                            const dd=(b.schedule||{})[d]||{};
+                            const acts=dd.slots?.map(s=>s.activity).filter(Boolean)||(dd.activity?[dd.activity]:[]);
+                            return acts.some(a=>a===station) && !manualIds4.has(b.id);
+                          }).map(b=>({boatId:b.id,subsystem:"",work:"",_auto:true}))
+                        : [];
+                      const jobs=[...autoJobs4,...manualJobs];
                       if(!jobs.length) return <td key={d} className={d===todayStr?"today-col":""}><span style={{color:"var(--navy3)"}}>&#x2014;</span></td>;
                       return (
                         <td key={d} className={d===todayStr?"today-col":""} style={{verticalAlign:"top",padding:"6px 8px"}}>
@@ -702,15 +753,39 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
   );
 }
 
+const GOOGLE_CLIENT_ID = "938973701988-5f0t7prb2r3fl0c7k6ukrmn17u66b9ao.apps.googleusercontent.com";
+const APPROVER_DOMAIN  = "skanarobotics.com";
+
 export default function App() {
   const [fleet,setFleet]           = useState(null);
   const [selectedId,setSelectedId] = useState(null);
   const [tab,setTab]               = useState("maintenance");
   const [modal,setModal]           = useState(null);
   const [expandedLru,setExpandedLru] = useState({});
-  const [confirm, setConfirm] = useState(null); // {msg, onYes}
+  const [confirm, setConfirm] = useState(null);
   const [view,setView]             = useState("fleet");
   const [weekOffset,setWeekOffset] = useState(0);
+  const [user,setUser]             = useState(null);
+
+  const isApprover = user && user.email.endsWith("@"+APPROVER_DOMAIN);
+
+  useEffect(()=>{
+    const s=document.createElement("script");
+    s.src="https://accounts.google.com/gsi/client";
+    s.async=true;
+    s.onload=()=>{
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback:(res)=>{
+          try{
+            const p=JSON.parse(atob(res.credential.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+            setUser({email:p.email,name:p.name,picture:p.picture});
+          }catch(e){console.error(e);}
+        }
+      });
+    };
+    document.head.appendChild(s);
+  },[]);
 
   useEffect(()=>{
     loadFleet().then(data=>{
@@ -819,6 +894,31 @@ export default function App() {
           <div className="sidebar-header">
             <img src={LOGO_SRC} alt="Skana Robotics" className="sidebar-logo"/>
             <div className="logo-sub">יומן ציי</div>
+            {user ? (
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:10,width:"100%",justifyContent:"center"}}>
+                {user.picture && <img src={user.picture} style={{width:26,height:26,borderRadius:"50%",border:"1px solid var(--navy3)"}} alt=""/>}
+                <span style={{fontSize:10,color:"var(--fog)",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.name}</span>
+                <button onClick={()=>setUser(null)} style={{fontSize:10,color:"var(--slate)",background:"transparent",border:"none",cursor:"pointer",padding:"2px 4px"}}>יציאה</button>
+              </div>
+            ) : (
+              <button
+                onClick={()=>{
+                  if(window.google?.accounts?.id){
+                    window.google.accounts.id.prompt();
+                  }
+                }}
+                style={{marginTop:10,padding:"6px 14px",background:"transparent",
+                  border:"1px solid var(--navy3)",borderRadius:6,color:"var(--fog)",
+                  fontSize:11,cursor:"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <svg width="14" height="14" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                  <path d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                </svg>
+                כניסה עם Google
+              </button>
+            )}
           </div>
           <div className="fleet-label">כלי שיט</div>
           {fleet.boats.map(b=>{
@@ -853,11 +953,48 @@ export default function App() {
 
           {view==="weekly" && <WeeklyView fleet={fleet} weekOffset={weekOffset} setWeekOffset={setWeekOffset}/>}
           {view==="stations" && <StationsView fleet={fleet} weekOffset={weekOffset} setWeekOffset={setWeekOffset}
+            isApprover={isApprover}
+            onApprove={(station,date,jobIndex)=>{
+              setFleet(f=>{
+                const cell=((f.stationSchedule||{})[station]||{})[date]||{};
+                const jobs=[...(cell.jobs||[])];
+                jobs[jobIndex]={...jobs[jobIndex],status:"approved"};
+                // sync to boat schedule if synced station
+                const newSt={...(f.stationSchedule||{}),[station]:{...((f.stationSchedule||{})[station]||{}),[date]:{...cell,jobs}}};
+                const approvedBoatId=jobs[jobIndex].boatId;
+                if(SYNCED_STATIONS.has(station)&&approvedBoatId){
+                  const newBoats=f.boats.map(boat=>{
+                    if(boat.id!==approvedBoatId) return boat;
+                    const dd=(boat.schedule||{})[date]||{};
+                    const slots=dd.slots||(dd.activity?[{activity:dd.activity,note:"",remarks:""}]:[{activity:"",note:"",remarks:""}]);
+                    if(slots.some(s=>s.activity===station)) return boat;
+                    const newSlots=slots[0]?.activity?[...slots,{activity:station,note:"",remarks:""}]:[{activity:station,note:"",remarks:""}];
+                    return {...boat,schedule:{...(boat.schedule||{}),[date]:{slots:newSlots}}};
+                  });
+                  return {...f,stationSchedule:newSt,boats:newBoats};
+                }
+                return {...f,stationSchedule:newSt};
+              });
+            }}
             onAssign={(station,date,cellData)=>{
-              setFleet(f=>({...f,stationSchedule:{
-                ...(f.stationSchedule||{}),
-                [station]:{...((f.stationSchedule||{})[station]||{}),[date]:cellData}
-              }}));
+              setFleet(f=>{
+                const newStation={...(f.stationSchedule||{}),
+                  [station]:{...((f.stationSchedule||{})[station]||{}),[date]:cellData}};
+                // Sync: if synced station, update boat schedules too
+                if(SYNCED_STATIONS.has(station)){
+                  const assignedIds=new Set((cellData.jobs||[]).filter(j=>j.boatId&&!j._auto).map(j=>j.boatId));
+                  const newBoats=f.boats.map(boat=>{
+                    if(!assignedIds.has(boat.id)) return boat;
+                    const dd=(boat.schedule||{})[date]||{};
+                    const slots=dd.slots||(dd.activity?[{activity:dd.activity,note:"",remarks:""}]:[{activity:"",note:"",remarks:""}]);
+                    if(slots.some(s=>s.activity===station)) return boat;
+                    const newSlots=slots[0]?.activity?[...slots,{activity:station,note:"",remarks:""}]:[{activity:station,note:"",remarks:""}];
+                    return {...boat,schedule:{...(boat.schedule||{}),[date]:{slots:newSlots}}};
+                  });
+                  return {...f,stationSchedule:newStation,boats:newBoats};
+                }
+                return {...f,stationSchedule:newStation};
+              });
             }}
           />}
 
