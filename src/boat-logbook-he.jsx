@@ -643,6 +643,58 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
           </tbody>
         </table>
       </div>
+      <div style={{marginTop:28}}>
+        <div className="weekly-title" style={{fontSize:14,marginBottom:12,paddingRight:4,borderTop:"1px solid var(--navy3)",paddingTop:20}}>תחנות עבודה — סיכום שבועי</div>
+        <div style={{overflowX:"auto"}}>
+          <table className="weekly-table">
+            <thead>
+              <tr>
+                <th className="boat-col" style={{minWidth:130}}>תחנה</th>
+                {dates.slice(0,5).map((d,i)=>(
+                  <th key={d} className={d===todayStr?"today-col":""}>
+                    <div>{["א'","ב'","ג'","ד'","ה'"][i]}</div>
+                    <div style={{fontFamily:"var(--mono)",fontSize:10}}>{fmtDate(d)}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {STATIONS.map((station,si)=>{
+                const sc=STATION_COLORS[si];
+                const stSched=fleet.stationSchedule||{};
+                return (
+                  <tr key={station}>
+                    <td className="boat-cell">
+                      <span style={{display:"inline-block",padding:"3px 10px",borderRadius:4,
+                        background:sc.bg,border:"1px solid "+sc.border,color:sc.color,
+                        fontSize:11,fontWeight:700}}>{station}</span>
+                    </td>
+                    {dates.slice(0,5).map(d=>{
+                      const cell=(stSched[station]||{})[d]||{};
+                      const jobs=(cell.jobs||[]).filter(j=>j.boatId||j.work||j.subsystem);
+                      if(!jobs.length) return <td key={d} className={d===todayStr?"today-col":""}><span style={{color:"var(--navy3)"}}>&#x2014;</span></td>;
+                      return (
+                        <td key={d} className={d===todayStr?"today-col":""} style={{verticalAlign:"top",padding:"6px 8px"}}>
+                          {jobs.map((job,ji)=>{
+                            const b=fleet.boats.find(x=>x.id===job.boatId);
+                            return (
+                              <div key={ji} style={{marginBottom:ji<jobs.length-1?6:0,paddingBottom:ji<jobs.length-1?6:0,borderBottom:ji<jobs.length-1?"1px solid var(--navy3)":"none"}}>
+                                {b&&<div style={{fontSize:11,fontWeight:700,color:sc.color}}>{b.name}</div>}
+                                {job.subsystem&&<div style={{fontSize:10,color:"var(--orange2)"}}>{job.subsystem}</div>}
+                                {job.work&&<div style={{fontSize:10,color:"var(--fog)",whiteSpace:"pre-wrap"}}>{job.work}</div>}
+                              </div>
+                            );
+                          })}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
