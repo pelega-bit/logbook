@@ -223,6 +223,14 @@ const css = `
   .permit-actions { padding:8px 16px; border-top:1px solid var(--navy3); display:flex; gap:8px; justify-content:flex-start; direction:rtl; }
 
   .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); display:flex; align-items:center; justify-content:center; z-index:100; }
+  .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); display:flex; align-items:center; justify-content:center; z-index:200; }
+  .confirm-box { background:var(--navy2); border:1px solid var(--navy3); border-radius:8px; padding:28px 32px; min-width:320px; max-width:90vw; direction:rtl; text-align:right; }
+  .confirm-msg { font-size:16px; color:var(--white); margin-bottom:20px; line-height:1.5; }
+  .confirm-btns { display:flex; gap:10px; justify-content:flex-start; }
+  .confirm-yes { background:var(--red); color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:14px; font-weight:700; cursor:pointer; }
+  .confirm-yes:hover { opacity:0.85; }
+  .confirm-no { background:transparent; color:var(--slate); border:1px solid var(--navy3); border-radius:6px; padding:8px 20px; font-size:14px; cursor:pointer; }
+  .confirm-no:hover { color:var(--white); }
   .modal { background:var(--navy2); border:1px solid var(--navy3); border-radius:8px; padding:26px; width:600px; max-width:96vw; max-height:92vh; overflow-y:auto; direction:rtl; }
   .modal-title { font-size:22px; font-weight:800; color:var(--orange2); margin-bottom:18px; }
   .modal-section { font-size:11px; font-weight:700; color:var(--orange); margin:16px 0 10px; border-bottom:1px solid var(--navy3); padding-bottom:6px; }
