@@ -1144,22 +1144,12 @@ export default function App() {
                                 const upd=(patch)=>{const ns=[...slots];ns[si]={...slot,...patch};updateSlots(ns);};
                                 return (
                                   <div key={si} style={{marginBottom:si<slots.length-1?10:0,paddingBottom:si<slots.length-1?10:0,borderBottom:si<slots.length-1?"1px solid var(--navy3)":"none"}}>
-                                    <select value={slot.activity||""} onChange={e=>upd({activity:e.target.value})}
+                                    <input value={slot.activity||""} onChange={e=>upd({activity:e.target.value})}
+                                      placeholder="פעילות..."
                                       style={{width:"100%",padding:"5px 8px",marginBottom:4,
                                         background:ac?ac.bg:"var(--navy2)",border:"1px solid "+(ac?ac.border:"var(--navy3)"),
-                                        borderRadius:4,color:ac?ac.color:"var(--slate)",fontFamily:"var(--sans)",
-                                        fontSize:12,fontWeight:ac?700:400,direction:"rtl",cursor:"pointer",outline:"none"}}>
-                                      <option value="">— בחר —</option>
-                                      {["בריכה","ים","תחזוקה","הכנות","מסירה","בדיקה","ביקור"].map(a=><option key={a} value={a}>{a}</option>)}
-                                    </select>
-                                    <select value={slot.team||""} onChange={e=>upd({team:e.target.value})}
-                                      style={{width:"100%",padding:"4px 6px",marginBottom:4,
-                                        background:"var(--navy2)",border:"1px solid var(--navy3)",
-                                        borderRadius:4,color:"var(--fog)",fontFamily:"var(--sans)",
-                                        fontSize:11,direction:"rtl",cursor:"pointer",outline:"none"}}>
-                                      <option value="">— צוות —</option>
-                                      {["גוף ומכונה","אינטגרציה","ים","הנדסה","מוצר","שיווק"].map(t=><option key={t} value={t}>{t}</option>)}
-                                    </select>
+                                        borderRadius:4,color:ac?ac.color:"var(--fog)",fontFamily:"var(--sans)",
+                                        fontSize:12,fontWeight:ac?700:400,direction:"rtl",outline:"none"}}/>
                                     <textarea value={slot.note||""} placeholder="משתתפים..."
                                       onChange={e=>upd({note:e.target.value})}
                                       style={{width:"100%",minHeight:40,padding:"4px 6px",marginBottom:4,
