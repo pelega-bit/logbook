@@ -627,11 +627,16 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
                   </td>
                   {dates.map(d=>{
                     const entry=(boat.schedule||{})[d];
-                    const ac=entry?ACTIVITY_COLORS[entry.activity]||ACTIVITY_COLORS["אחר"]:null;
+                    const acts=entry?.slots?.map(s=>s.activity).filter(Boolean)||(entry?.activity?[entry.activity]:[]);
                     return (
-                      <td key={d} className={d===todayStr?"today-col":""}>
-                        {entry
-                          ?<span className="weekly-act" style={{background:ac.bg,border:"1px solid "+ac.border,color:ac.color}}>{entry.activity}</span>
+                      <td key={d} className={d===todayStr?"today-col":""} style={{verticalAlign:"top",padding:"6px 8px"}}>
+                        {acts.length>0
+                          ?acts.map((act,ai)=>{
+                              const ac=ACTIVITY_COLORS[act]||null;
+                              return ac
+                                ?<div key={ai} style={{marginBottom:2}}><span className="weekly-act" style={{background:ac.bg,border:"1px solid "+ac.border,color:ac.color}}>{act}</span></div>
+                                :<div key={ai} style={{marginBottom:2}}><span style={{fontSize:11,fontWeight:600,color:"var(--fog)",background:"var(--navy2)",border:"1px solid var(--navy3)",borderRadius:4,padding:"2px 8px",display:"inline-block"}}>{act}</span></div>;
+                            })
                           :<span style={{color:"var(--navy3)"}}>&#x2014;</span>
                         }
                       </td>
