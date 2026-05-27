@@ -487,9 +487,7 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign }) {
               return (
                 <tr key={station}>
                   <td className="boat-cell">
-                    <span style={{display:"inline-block",padding:"4px 12px",borderRadius:4,
-                      background:sc.bg,border:"1px solid "+sc.border,color:sc.color,
-                      fontSize:12,fontWeight:700}}>{station}</span>
+                    <span style={{fontSize:12,fontWeight:700,color:sc.color}}>{station}</span>
                   </td>
                   {dates.slice(0,5).map(d=>{
                     const cell=(stationSched[station]||{})[d]||{};
@@ -617,12 +615,9 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
               return (
                 <tr key={boat.id}>
                   <td className="boat-cell">
-                    <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span>{op?"🟢":"🔴"}</span>
-                      <div>
-                        <div>{boat.name}</div>
-                        <div style={{fontSize:10,fontFamily:"var(--mono)",color:"var(--slate)"}}>{boat.hull}</div>
-                      </div>
+                    <div>
+                      <div>{boat.name}</div>
+                      <div style={{fontSize:10,fontFamily:"var(--mono)",color:"var(--slate)"}}>{boat.hull}</div>
                     </div>
                   </td>
                   {dates.map(d=>{
@@ -670,9 +665,7 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
                 return (
                   <tr key={station}>
                     <td className="boat-cell">
-                      <span style={{display:"inline-block",padding:"3px 10px",borderRadius:4,
-                        background:sc.bg,border:"1px solid "+sc.border,color:sc.color,
-                        fontSize:11,fontWeight:700}}>{station}</span>
+                      <span style={{fontSize:12,fontWeight:700,color:sc.color}}>{station}</span>
                     </td>
                     {dates.slice(0,5).map(d=>{
                       const cell=(stSched[station]||{})[d]||{};
