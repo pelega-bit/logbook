@@ -35,7 +35,7 @@ const SEED = {
 const uid = () => Math.random().toString(36).slice(2,9);
 const today = () => new Date().toISOString().slice(0,10);
 const MAINT_TYPES   = ["תחזוקה","תקלה","בדיקה","תיקון","שדרוג","אחר"];
-const MAINT_DOMAINS = ["פלטפורמה","חשמל","בקרה נמוכה","בקרה גבוהה","בטיחות"];
+const MAINT_DOMAINS = ["פלטפורמה","חשמל","בקרה נמוכה","בקרה גבוהה","בטיחות","כללי"];
 const SCHEDULE_ACTIVITIES = ["ים","בריכה","תחזוקה","פנוי","אחר"];
 const ACTIVITY_COLORS = {
   "ים":      { bg:"rgba(74,144,226,.2)",  border:"#4a90e2", color:"#6baaff" },
