@@ -25,13 +25,18 @@ async function saveFleet(data) {
   } catch {}
 }
 
-const STATIONS = ["בריכה", "דולב", "עמדה פרוסה 1", "עמדה פרוסה 2"];
+const STATIONS = ["ים", "בריכה", "דולב", "עמדה פרוסה 1", "עמדה פרוסה 2"];
 const STATION_COLORS = [
-  { bg:"rgba(74,199,173,.2)",  border:"#4ac7ad", color:"#4de8c8" },
-  { bg:"rgba(74,144,226,.2)",  border:"#4a90e2", color:"#6baaff" },
-  { bg:"rgba(232,83,10,.2)",   border:"#e8530a", color:"#ff6b35" },
-  { bg:"rgba(167,139,250,.2)", border:"#a78bfa", color:"#c4b5fd" },
+  { bg:"rgba(37,99,235,.2)",   border:"#3b82f6", color:"#60a5fa" },
+  { bg:"rgba(147,197,253,.15)", border:"#7dd3fc", color:"#bae6fd" },
+  { bg:"rgba(52,211,153,.15)", border:"#34d399", color:"#6ee7b7" },
+  { bg:"rgba(167,139,250,.15)", border:"#a78bfa", color:"#c4b5fd" },
+  { bg:"rgba(251,191,36,.15)", border:"#fbbf24", color:"#fde68a" },
 ];
+const getBoatColor = (name) => {
+  if (name && name.toLowerCase().includes("unicorn")) return {color:"#f472b6",bg:"rgba(244,114,182,.15)",border:"#f472b6"};
+  return {color:"#fb923c",bg:"rgba(251,146,60,.15)",border:"#fb923c"};
+};
 
 const SEED = {
   stationSchedule: {},
@@ -460,7 +465,7 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign }) {
   return (
     <div className="weekly-view">
       <div className="weekly-header">
-        <div className="weekly-title">תחנות עבודה</div>
+        <div className="weekly-title">אזורי עבודה</div>
         <div className="weekly-nav">
           <button className="nav-btn" onClick={()=>setWeekOffset(w=>w-1)}>&#9664; שבוע קודם</button>
           <span className="weekly-range">{fmtDate(dates[0])} — {fmtDate(dates[4])}</span>
@@ -518,9 +523,9 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign }) {
                                   updateJob({boatId:val});
                                 }}
                                 style={{width:"100%",padding:"4px 6px",marginBottom:4,
-                                  background:assignedBoat?sc.bg:"var(--navy2)",
-                                  border:"1px solid "+(assignedBoat?sc.border:"var(--navy3)"),
-                                  borderRadius:4,color:assignedBoat?sc.color:"var(--slate)",
+                                  background:assignedBoat?getBoatColor(assignedBoat.name).bg:"var(--navy2)",
+                                  border:"1px solid "+(assignedBoat?getBoatColor(assignedBoat.name).border:"var(--navy3)"),
+                                  borderRadius:4,color:assignedBoat?getBoatColor(assignedBoat.name).color:"var(--slate)",
                                   fontFamily:"var(--sans)",fontSize:11,fontWeight:assignedBoat?700:400,
                                   direction:"rtl",cursor:"pointer",outline:"none"}}>
                                 <option value="">— כלי —</option>
@@ -644,7 +649,7 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
         </table>
       </div>
       <div style={{marginTop:28}}>
-        <div className="weekly-title" style={{fontSize:14,marginBottom:12,paddingRight:4,borderTop:"1px solid var(--navy3)",paddingTop:20}}>תחנות עבודה — סיכום שבועי</div>
+        <div className="weekly-title" style={{fontSize:14,marginBottom:12,paddingRight:4,borderTop:"1px solid var(--navy3)",paddingTop:20}}>אזורי עבודה — סיכום שבועי</div>
         <div style={{overflowX:"auto"}}>
           <table className="weekly-table">
             <thead>
@@ -677,7 +682,7 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
                             const b=fleet.boats.find(x=>x.id===job.boatId);
                             return (
                               <div key={ji} style={{marginBottom:ji<jobs.length-1?6:0,paddingBottom:ji<jobs.length-1?6:0,borderBottom:ji<jobs.length-1?"1px solid var(--navy3)":"none"}}>
-                                {b&&<div style={{fontSize:11,fontWeight:700,color:sc.color}}>{b.name}</div>}
+                                {b&&<div><span style={{background:getBoatColor(b.name).bg,color:getBoatColor(b.name).color,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:500,display:"inline-block"}}>{b.name}</span></div>}
                                 {job.subsystem&&<div style={{fontSize:10,color:"var(--orange2)"}}>{job.subsystem}</div>}
                                 {job.work&&<div style={{fontSize:10,color:"var(--fog)",whiteSpace:"pre-wrap"}}>{job.work}</div>}
                               </div>
@@ -840,7 +845,7 @@ export default function App() {
           <button
             className={"weekly-sched-btn "+(view==="stations"?"active-view":"")}
             onClick={()=>setView(v=>v==="stations"?"fleet":"stations")}>
-            🏗️ תחנות עבודה
+            🏗️ אזורי עבודה
           </button>
         </nav>
 
