@@ -1155,6 +1155,14 @@ export default function App() {
                                         background:ac?ac.bg:"var(--navy2)",border:"1px solid "+(ac?ac.border:"var(--navy3)"),
                                         borderRadius:4,color:ac?ac.color:"var(--fog)",fontFamily:"var(--sans)",
                                         fontSize:12,fontWeight:ac?700:400,direction:"rtl",outline:"none"}}/>
+                                    <input value={slot.subject||""} onChange={e=>upd({subject:e.target.value})}
+                                      placeholder="נושא..."
+                                      style={{width:"100%",padding:"4px 8px",marginBottom:4,
+                                        background:"transparent",border:"1px solid transparent",
+                                        borderRadius:4,color:"var(--orange2)",fontFamily:"var(--sans)",
+                                        fontSize:11,direction:"rtl",outline:"none"}}
+                                      onFocus={e=>e.target.style.border="1px solid var(--navy3)"}
+                                      onBlur={e=>e.target.style.border="1px solid "+(slot.subject?"var(--navy3)":"transparent")}/>
                                     <textarea value={slot.note||""} placeholder="משתתפים..."
                                       onChange={e=>upd({note:e.target.value})}
                                       style={{width:"100%",minHeight:40,padding:"4px 6px",marginBottom:4,
