@@ -64,7 +64,11 @@ const SEED = {
 
 
 const uid = () => Math.random().toString(36).slice(2,9);
-const today = () => new Date().toISOString().slice(0,10);
+const localISO = (d) => {
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return y+"-"+m+"-"+day;
+};
+const today = () => localISO(new Date());
 const MAINT_TYPES   = ["תחזוקה","תקלה","בדיקה","תיקון","שדרוג","אחר"];
 const MAINT_DOMAINS = ["פלטפורמה","חשמל","בקרה נמוכה","בקרה גבוהה","בטיחות","כללי"];
 const SCHEDULE_ACTIVITIES = ["ים","בריכה","תחזוקה","הכנות","מסירה","בדיקה","ביקור","פנוי","אחר"];
@@ -85,7 +89,7 @@ function getWeekDates(offset) {
   return Array.from({length:7}, (_, i) => {
     const d = new Date(sunday);
     d.setDate(sunday.getDate() + i);
-    return d.toISOString().slice(0,10);
+    return localISO(d);
   });
 }
 function fmtDate(iso) {
@@ -253,7 +257,26 @@ const css = `
   .btn-cancel { padding:7px 16px; background:transparent; border:1px solid var(--navy3); color:var(--slate); font-family:var(--sans); font-size:12px; border-radius:4px; cursor:pointer; }
   .btn-save { padding:7px 16px; background:var(--orange); border:1px solid var(--orange); color:#fff; font-family:var(--sans); font-size:12px; font-weight:700; border-radius:4px; cursor:pointer; }
   .empty { font-size:13px; color:var(--slate); padding:28px 0; text-align:center; }
-`
+
+  /* WEEKLY VIEW */
+  .weekly-view { padding:24px 28px; direction:rtl; }
+  .weekly-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .weekly-title { font-size:16px; font-weight:700; color:var(--white); }
+  .weekly-nav { display:flex; align-items:center; gap:10px; }
+  .weekly-range { font-family:var(--mono); font-size:11px; color:var(--slate); }
+  .nav-btn { padding:4px 10px; background:transparent; border:1px solid var(--navy3); border-radius:4px; color:var(--slate); font-family:var(--sans); font-size:11px; cursor:pointer; }
+  .nav-btn:hover { border-color:var(--orange); color:var(--orange); }
+  .weekly-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+  .weekly-table th { padding:8px 12px; background:var(--navy2); border:1px solid var(--navy3); font-size:11px; font-weight:600; color:var(--slate); text-align:center; }
+  .weekly-table td { padding:8px 12px; border:1px solid var(--navy3); vertical-align:middle; text-align:center; }
+  .boat-col { width:140px; text-align:right !important; }
+  .boat-cell { background:var(--navy2) !important; text-align:right !important; padding:8px 14px !important; }
+  .boat-name { font-size:13px; font-weight:600; color:var(--white); }
+  .today-col { background:rgba(232,83,10,.06) !important; border-color:rgba(232,83,10,.3) !important; }
+  .weekly-act { display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+  .weekly-sched-btn { padding:6px 14px; background:transparent; border:1px solid var(--navy3); border-radius:6px; color:var(--slate); font-family:var(--sans); font-size:12px; cursor:pointer; margin-left:8px; }
+  .weekly-sched-btn:hover, .weekly-sched-btn.active-view { border-color:var(--orange); color:var(--orange); background:rgba(232,83,10,.08); }
+\``
 
 
 function ConfirmModal({ msg, onYes, onNo }) {
@@ -662,10 +685,8 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
               return (
                 <tr key={boat.id}>
                   <td className="boat-cell">
-                    <div>
-                      <div>{boat.name}</div>
-                      <div style={{fontSize:10,fontFamily:"var(--mono)",color:"var(--slate)"}}>{boat.hull}</div>
-                    </div>
+                    <div className="boat-name">{boat.name}</div>
+                    <div style={{fontSize:10,fontFamily:"var(--mono)",color:"var(--slate)"}}>{boat.hull}</div>
                   </td>
                   {dates.map(d=>{
                     const entry=(boat.schedule||{})[d];
@@ -712,7 +733,7 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
                 return (
                   <tr key={station}>
                     <td className="boat-cell">
-                      <span style={{fontSize:12,fontWeight:700,color:sc.color}}>{station}</span>
+                      <span className="boat-name" style={{color:sc.color}}>{station}</span>
                     </td>
                     {dates.slice(0,5).map(d=>{
                       const cell=(stSched[station]||{})[d]||{};
