@@ -534,10 +534,18 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign, isApprover, 
                       <td key={d} className={d===todayStr?"today-col":""} style={{padding:"6px 8px",verticalAlign:"top"}}>
                         {jobs.map((job,ji)=>{
                           const assignedBoat=fleet.boats.find(b=>b.id===job.boatId);
+                          const manualIdx = ji - autoBoats.length;
                           const updateJob=(patch)=>{
-                            const newJobs=[...jobs];
-                            newJobs[ji]={...job,...patch};
-                            onAssign(station,d,{...cell,jobs:newJobs});
+                            if(manualIdx < 0) return; // auto job - read only
+                            const updated={...job,...patch};
+                            let newManual=[...manualJobs];
+                            // Remove job if boat cleared and no content
+                            if(!updated.boatId && !updated.subsystem && !updated.work){
+                              newManual.splice(manualIdx,1);
+                            } else {
+                              newManual[manualIdx]=updated;
+                            }
+                            onAssign(station,d,{...cell,jobs:newManual});
                           };
                           return (
                             <div key={ji} style={{
@@ -806,7 +814,72 @@ export default function App() {
       });
     };
     document.head.appendChild(s);
+    // Load SheetJS for Excel export
+    const sx=document.createElement("script");
+    sx.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    document.head.appendChild(sx);
   },[]);
+
+  const exportExcel = () => {
+    if(!window.XLSX || !fleet) return;
+    const XLSX = window.XLSX;
+    const wb = XLSX.utils.book_new();
+    // Sheet 1: כלי שיט
+    const boatRows = fleet.boats.map(b=>({
+      "שם": b.name, "גוף": b.hull,
+      "שעות מנוע": b.engineServiceHours||"",
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(boatRows), "כלי שיט");
+    // Sheet 2: תחזוקה
+    const maintRows = fleet.boats.flatMap(b=>(b.maintenance||[]).map(m=>({
+      "כלי": b.name, "תאריך": m.date, "איש צוות": m.name,
+      "סוג": m.mtype, "תחום": m.domain,
+      "שעות התחלה": m.engineHours||"", "שעות סיום": m.engineEnd||"",
+      "פעולה": m.action, "סגירה": m.closing,
+      "המשך טיפול": m.followUp, "הערות": m.notes,
+      "כשיר": m.operable===false?"לא":"כן"
+    })));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(maintRows), "תחזוקה");
+    // Sheet 3: הפלגות
+    const sailRows = fleet.boats.flatMap(b=>(b.sailing||[]).map(s=>({
+      "כלי": b.name, "אתר": s.site, "תאריך": s.date,
+      "שעת התחלה": s.startTime, "שעת סיום": s.finishTime,
+      "צוות": s.crew, "הערות": s.notes||""
+    })));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sailRows), "הפלגות");
+    // Sheet 4: היתרים
+    const permRows = fleet.boats.flatMap(b=>(b.permits||[]).map(p=>({
+      "כלי": b.name,
+      "תיאור פתיחה": p.openDesc, "תאריך פתיחה": p.openDate, "פותח": p.openName,
+      "תיאור סגירה": p.closeDesc||"", "תאריך סגירה": p.closeDate||"", "סוגר": p.closeName||""
+    })));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(permRows), "היתרים");
+    // Sheet 5: לו״ז כלי
+    const schedRows = fleet.boats.flatMap(b=>
+      Object.entries(b.schedule||{}).flatMap(([date, day])=>{
+        const slots = day.slots||(day.activity?[{activity:day.activity,note:day.note||""}]:[]);
+        return slots.filter(s=>s.activity).map(s=>({
+          "כלי": b.name, "תאריך": date,
+          "פעילות": s.activity, "נושא": s.subject||"",
+          "משתתפים": s.note||"", "הערות": s.remarks||""
+        }));
+      })
+    );
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(schedRows), "לו״ז כלי");
+    // Sheet 6: אזורי עבודה
+    const stRows = Object.entries(fleet.stationSchedule||{}).flatMap(([station, dates])=>
+      Object.entries(dates).flatMap(([date, cell])=>
+        (cell.jobs||[]).filter(j=>j.boatId).map(j=>{
+          const b=fleet.boats.find(x=>x.id===j.boatId);
+          return {"אזור": station, "תאריך": date, "כלי": b?.name||j.boatId,
+            "מכלול": j.subsystem||"", "עבודה": j.work||"", "סטטוס": j.status||"pending"};
+        })
+      )
+    );
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stRows), "אזורי עבודה");
+    const dateStr = localISO(new Date()).replace(/-/g,"");
+    XLSX.writeFile(wb, "skana-logbook-backup-"+dateStr+".xlsx");
+  };
 
   useEffect(()=>{
     if(!user || !user.email.endsWith("@"+APPROVER_DOMAIN)) return;
@@ -964,6 +1037,15 @@ export default function App() {
               <button onClick={()=>setUser(null)} style={{fontSize:10,color:"var(--slate)",background:"transparent",border:"none",cursor:"pointer",padding:"2px 4px"}} title="התנתק">✕</button>
             </div>
           </div>
+          <button onClick={exportExcel}
+            style={{margin:"10px 16px 0",padding:"7px 12px",background:"transparent",
+              border:"1px solid var(--navy3)",borderRadius:6,color:"var(--slate)",
+              fontFamily:"var(--sans)",fontSize:11,cursor:"pointer",width:"calc(100% - 32px)",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
+            onMouseOver={e=>{e.currentTarget.style.borderColor="var(--orange)";e.currentTarget.style.color="var(--orange)";}}
+            onMouseOut={e=>{e.currentTarget.style.borderColor="var(--navy3)";e.currentTarget.style.color="var(--slate)";}}>
+            ⬇ גיבוי Excel
+          </button>
           <div className="fleet-label">כלי שיט</div>
           {fleet.boats.map(b=>{
             const lm=[...(b.maintenance||[])].sort((a,c)=>c.date.localeCompare(a.date))[0];
