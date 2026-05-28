@@ -58,7 +58,6 @@ const SEED = {
       { id:"lr2", lruType:"בקר הנעה", sn:"PC-002", pn:"PN-8812", locationStatus:"מותקן / פעיל", comment:"בסיס ATP",
         swVersions:[{ id:"sv2", swVersion:"v2.0.3", date:"2025-03-10", name:"צוות בקרת איכות", comments:"התקנת בסיס ATP" }] },
     ],
-    schedule: {},
   }],
 };
 
