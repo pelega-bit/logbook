@@ -1316,7 +1316,7 @@ export default function App() {
                       <th style={{width:72}}>כשירות</th>
                       <th style={{width:100}}>זמן עבודת מנוע</th>
                       <th style={{width:200}}>תיאור הפעילות</th>
-                      <th style={{width:200}}>פרטי פעולה וסגירה</th>
+                      <th style={{width:200}}>פרטי פעולה</th>
                       <th style={{width:150}}>משימות לביצוע</th>
                       <th style={{width:100}}>הערות</th>
                       <th style={{width:58}}></th>
@@ -1334,7 +1334,7 @@ export default function App() {
                             <td><span className={"pill "+(op2?"operable-yes":"operable-no")} style={{fontSize:10}}>{op2?"שמיש":"לא שמיש"}</span></td>
                             <td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td>
                             <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.action||""}>{m.action||"—"}</td>
-                            <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.closing||""}>{m.closing||"—"}</td>
+                            <td style={{minWidth:100,wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{m.closing||"—"}</td>
                             <td style={{maxWidth:140,fontSize:12,color:"var(--orange2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.followUp||""}>{m.followUp||"—"}</td>
                             <td style={{maxWidth:140,fontSize:12,color:"var(--slate)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.notes||""}>{m.notes||"—"}</td>
                             <td><div style={{display:"flex",gap:5}}>
