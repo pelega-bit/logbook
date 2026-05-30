@@ -814,10 +814,14 @@ export default function App() {
             // Request Drive access token
             setTimeout(()=>{
               if(window.google?.accounts?.oauth2){
-                const tc=window.google.accounts.oauth2.initTokenClient({
+                let tc;
+                tc=window.google.accounts.oauth2.initTokenClient({
                   client_id:GOOGLE_CLIENT_ID,
                   scope:"https://www.googleapis.com/auth/drive.file",
-                  callback:(r)=>{ if(r.access_token) driveTokenRef.current=r.access_token; }
+                  callback:(r)=>{
+                    if(r.access_token){ driveTokenRef.current=r.access_token; }
+                    else{ tc.requestAccessToken({prompt:"consent"}); }
+                  }
                 });
                 tc.requestAccessToken({prompt:""});
               }
