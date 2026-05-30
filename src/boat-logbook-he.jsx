@@ -1308,7 +1308,12 @@ export default function App() {
                   <button className="action-btn" onClick={()=>setModal({type:"maint"})}>+ רשומה חדשה</button>
                 </div>
                 <div style={{overflowX:"auto"}}>
-                  <table className="tbl">
+                  <table className="tbl" style={{tableLayout:"fixed",minWidth:1100}}>
+                    <colgroup>
+                      <col style={{width:90}}/><col style={{width:90}}/><col style={{width:70}}/><col style={{width:80}}/><col style={{width:70}}/>
+                      <col style={{width:70}}/><col style={{width:70}}/><col style={{width:70}}/>
+                      <col style={{width:180}}/><col style={{width:180}}/><col style={{width:140}}/><col style={{width:100}}/><col style={{width:60}}/>
+                    </colgroup>
                     <thead><tr>
                       <th>תאריך</th><th>איש צוות</th><th>סוג</th><th>תחום</th><th>כשירות</th><th>שע׳ התחלה</th><th>שע׳ סיום</th><th>זמן הפעלה</th>
                       <th>תיאור הפעילות</th><th>פרטי פעולה וסגירה</th>
@@ -1330,10 +1335,10 @@ export default function App() {
                             <td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>
                               {(()=>{const s=parseFloat(m.engineHours)||0,e=parseFloat(m.engineEnd)||0;return e>s?(e-s).toFixed(1)+" שע׳":"—";})()}
                             </td>
-                            <td style={{maxWidth:160,minWidth:100}}>{m.action}</td>
-                            <td style={{maxWidth:160,minWidth:100}}>{m.closing}</td>
-                            <td style={{maxWidth:140,fontSize:12,color:"var(--orange2)"}}>{m.followUp||"—"}</td>
-                            <td style={{maxWidth:140,fontSize:12,color:"var(--slate)"}}>{m.notes||"—"}</td>
+                            <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.action||""}>{m.action||"—"}</td>
+                            <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.closing||""}>{m.closing||"—"}</td>
+                            <td style={{maxWidth:140,fontSize:12,color:"var(--orange2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.followUp||""}>{m.followUp||"—"}</td>
+                            <td style={{maxWidth:140,fontSize:12,color:"var(--slate)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.notes||""}>{m.notes||"—"}</td>
                             <td><div style={{display:"flex",gap:5}}>
                               <button className="icon-btn" onClick={()=>setModal({type:"maint",data:m})}>&#9999;</button>
                               <button className="delete-btn" onClick={()=>setConfirm({msg:"האם אתה בטוח שברצונך למחוק רשומה זו?",onYes:()=>listDel("maintenance",m.id)})}>&#x2715;</button>
