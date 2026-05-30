@@ -1335,8 +1335,8 @@ export default function App() {
                             <td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td>
                             <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.action||""}>{m.action||"—"}</td>
                             <td style={{minWidth:100,wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{m.closing||"—"}</td>
-                            <td style={{maxWidth:140,fontSize:12,color:"var(--orange2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.followUp||""}>{m.followUp||"—"}</td>
-                            <td style={{maxWidth:140,fontSize:12,color:"var(--slate)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.notes||""}>{m.notes||"—"}</td>
+                            <td style={{minWidth:100,fontSize:12,color:"var(--orange2)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{m.followUp||"—"}</td>
+                            <td style={{minWidth:100,fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{m.notes||"—"}</td>
                             <td><div style={{display:"flex",gap:5}}>
                               <button className="icon-btn" onClick={()=>setModal({type:"maint",data:m})}>&#9999;</button>
                               <button className="delete-btn" onClick={()=>setConfirm({msg:"האם אתה בטוח שברצונך למחוק רשומה זו?",onYes:()=>listDel("maintenance",m.id)})}>&#x2715;</button>
