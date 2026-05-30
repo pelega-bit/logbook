@@ -987,31 +987,33 @@ export default function App() {
       const folderId=await getOrCreateFolder(token);
       const mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
       for(const boat of data.boats){
-        const wb=buildBoatWorkbook(boat,data);
-        const buf=window.XLSX.write(wb,{type:"array",bookType:"xlsx"});
-        const fileBlob=new Blob([buf],{type:mimeType});
-        const fileName=boat.name+".xlsx";
-        let fid=driveFileIdRef.current[boat.id];
-        if(!fid){
-          const q=encodeURIComponent("name='"+fileName+"' and '"+folderId+"' in parents and trashed=false");
-          const sr=await fetch("https://www.googleapis.com/drive/v3/files?q="+q+"&spaces=drive",
-            {headers:{Authorization:"Bearer "+token}});
-          const sd=await sr.json();
-          if(sd.files?.length>0){ fid=sd.files[0].id; driveFileIdRef.current[boat.id]=fid; }
-        }
-        const form=new FormData();
-        const meta=fid?{name:fileName}:{name:fileName,mimeType,parents:[folderId]};
-        form.append("metadata",new Blob([JSON.stringify(meta)],{type:"application/json"}));
-        form.append("file",fileBlob);
-        if(fid){
-          await fetch("https://www.googleapis.com/upload/drive/v3/files/"+fid+"?uploadType=multipart",
-            {method:"PATCH",headers:{Authorization:"Bearer "+token},body:form});
-        } else {
-          const cr=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
-            {method:"POST",headers:{Authorization:"Bearer "+token},body:form});
-          const cd=await cr.json();
-          if(cd.id) driveFileIdRef.current[boat.id]=cd.id;
-        }
+        try{
+          const wb=buildBoatWorkbook(boat,data);
+          const buf=window.XLSX.write(wb,{type:"array",bookType:"xlsx"});
+          const fileBlob=new Blob([buf],{type:mimeType});
+          const fileName=(boat.name||boat.id)+".xlsx";
+          let fid=driveFileIdRef.current[boat.id];
+          if(!fid){
+            const q=encodeURIComponent("name='"+fileName+"' and '"+folderId+"' in parents and trashed=false");
+            const sr=await fetch("https://www.googleapis.com/drive/v3/files?q="+q+"&spaces=drive",
+              {headers:{Authorization:"Bearer "+token}});
+            const sd=await sr.json();
+            if(sd.files?.length>0){ fid=sd.files[0].id; driveFileIdRef.current[boat.id]=fid; }
+          }
+          const form=new FormData();
+          const meta=fid?{name:fileName}:{name:fileName,mimeType,parents:[folderId]};
+          form.append("metadata",new Blob([JSON.stringify(meta)],{type:"application/json"}));
+          form.append("file",fileBlob);
+          if(fid){
+            await fetch("https://www.googleapis.com/upload/drive/v3/files/"+fid+"?uploadType=multipart",
+              {method:"PATCH",headers:{Authorization:"Bearer "+token},body:form});
+          } else {
+            const cr=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+              {method:"POST",headers:{Authorization:"Bearer "+token},body:form});
+            const cd=await cr.json();
+            if(cd.id) driveFileIdRef.current[boat.id]=cd.id;
+          }
+        }catch(be){console.error("Drive backup error for boat",boat.name,be);}
       }
       setDriveBackedUp(new Date().toLocaleTimeString("he-IL"));
     }catch(e){console.error("Drive backup error:",e);}
