@@ -316,7 +316,7 @@ function BoatModal({ boat, onSave, onClose }) {
 }
 
 function MaintModal({ entry, onSave, onClose }) {
-  const [form, setForm] = useState(entry||{date:today(),name:"",mtype:"תחזוקה",domain:"פלטפורמה",engineHours:"",engineEnd:"",action:"",closing:"",followUp:"",notes:"",operable:true});
+  const [form, setForm] = useState(entry||{date:today(),name:"",mtype:"תחזוקה",domain:"פלטפורמה",engineWork:"",action:"",closing:"",followUp:"",notes:"",operable:true});
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
   return (
     <Modal title={entry?"עריכת רשומה":"רשומת תחזוקה חדשה"} onClose={onClose}>
@@ -348,8 +348,7 @@ function MaintModal({ entry, onSave, onClose }) {
         </div>
       </div>
       <div className="grid2">
-        <div className="field"><label>שעות מנוע התחלה</label><input value={form.engineHours||""} onChange={e=>f("engineHours",e.target.value)} placeholder="למשל: 42.5" style={{direction:"ltr",textAlign:"left"}}/></div>
-        <div className="field"><label>שעות מנוע סיום</label><input value={form.engineEnd||""} onChange={e=>f("engineEnd",e.target.value)} placeholder="למשל: 45.0" style={{direction:"ltr",textAlign:"left"}}/></div>
+        <div className="field"><label>זמן עבודת מנוע (שע׳)</label><input value={form.engineWork||""} onChange={e=>f("engineWork",e.target.value)} placeholder='למשל: 2.5'/></div>
       </div>
       <div className="field"><label>תיאור הפעילות</label><textarea value={form.action} onChange={e=>f("action",e.target.value)}/></div>
       <div className="field"><label>פרטי הפעולה / התיקון וסגירה</label><textarea value={form.closing} onChange={e=>f("closing",e.target.value)}/></div>
@@ -851,7 +850,7 @@ export default function App() {
     const maintRows = fleet.boats.flatMap(b=>(b.maintenance||[]).map(m=>({
       "כלי": b.name, "תאריך": m.date, "איש צוות": m.name,
       "סוג": m.mtype, "תחום": m.domain,
-      "שעות התחלה": m.engineHours||"", "שעות סיום": m.engineEnd||"",
+      "זמן עבודת מנוע": m.engineWork||"",
       "פעולה": m.action, "סגירה": m.closing,
       "המשך טיפול": m.followUp, "הערות": m.notes,
       "כשיר": m.operable===false?"לא":"כן"
@@ -936,7 +935,7 @@ export default function App() {
     const maintRows=(boat.maintenance||[]).map(m=>({
       "תאריך": m.date, "איש צוות": m.name||"",
       "סוג": m.mtype||"", "תחום": m.domain||"",
-      "שעות התחלה": m.engineHours||"", "שעות סיום": m.engineEnd||"",
+      "זמן עבודת מנוע": m.engineWork||"",
       "פעולה": m.action||"", "סגירה": m.closing||"",
       "המשך טיפול": m.followUp||"", "הערות": m.notes||"",
       "כשיר": m.operable===false?"לא":"כן"
@@ -1141,8 +1140,8 @@ export default function App() {
   },0);
   // Add engine hours from maintenance records
   const maintEngineHours=(boat?.maintenance||[]).reduce((acc,m)=>{
-    const start=parseFloat(m.engineHours)||0;
-    const end=parseFloat(m.engineEnd)||0;
+    const start=0;
+    const end=parseFloat(m.engineWork)||0;
     return acc+(end>start?end-start:0);
   },0);
   const totalEngineHours=totalSailingHours+maintEngineHours;
@@ -1308,16 +1307,14 @@ export default function App() {
                   <button className="action-btn" onClick={()=>setModal({type:"maint"})}>+ רשומה חדשה</button>
                 </div>
                 <div style={{overflowX:"auto"}}>
-                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1260}}>
+                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1160}}>
                     <thead><tr>
                       <th style={{width:90}}>תאריך</th>
                       <th style={{width:90}}>איש צוות</th>
                       <th style={{width:72}}>סוג</th>
                       <th style={{width:80}}>תחום</th>
                       <th style={{width:72}}>כשירות</th>
-                      <th style={{width:68}}>שע׳ התחלה</th>
-                      <th style={{width:68}}>שע׳ סיום</th>
-                      <th style={{width:68}}>זמן הפעלה</th>
+                      <th style={{width:100}}>זמן עבודת מנוע</th>
                       <th style={{width:200}}>תיאור הפעילות</th>
                       <th style={{width:200}}>פרטי פעולה וסגירה</th>
                       <th style={{width:150}}>משימות לביצוע</th>
@@ -1335,11 +1332,7 @@ export default function App() {
                             <td><span className="pill" style={{background:c.bg,border:"1px solid "+c.border,color:c.color}}>{m.mtype}</span></td>
                             <td><span className="domain-pill">{m.domain||"—"}</span></td>
                             <td><span className={"pill "+(op2?"operable-yes":"operable-no")} style={{fontSize:10}}>{op2?"שמיש":"לא שמיש"}</span></td>
-                            <td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)"}}>{m.engineHours||"—"}</td>
-                            <td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)"}}>{m.engineEnd||"—"}</td>
-                            <td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>
-                              {(()=>{const s=parseFloat(m.engineHours)||0,e=parseFloat(m.engineEnd)||0;return e>s?(e-s).toFixed(1)+" שע׳":"—";})()}
-                            </td>
+                            <td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td>
                             <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.action||""}>{m.action||"—"}</td>
                             <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.closing||""}>{m.closing||"—"}</td>
                             <td style={{maxWidth:140,fontSize:12,color:"var(--orange2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.followUp||""}>{m.followUp||"—"}</td>
