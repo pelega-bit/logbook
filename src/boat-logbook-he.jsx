@@ -796,7 +796,7 @@ export default function App() {
   const [user,setUser]             = useState(null);
   const [driveBackedUp,setDriveBackedUp] = useState(null); // last backup timestamp
   const driveTokenRef  = useRef(null);
-  const driveFileIdRef = useRef(null);
+  const driveFileIdRef = useRef({});
 
   const isApprover = user && user.email.endsWith("@"+APPROVER_DOMAIN);
 
@@ -925,90 +925,93 @@ export default function App() {
     return folderPromiseRef.current;
   };
 
-  const buildWorkbook = (data) => {
-    if(!window.XLSX) return null;
+  const buildBoatWorkbook = (boat, data) => {
     const XL = window.XLSX;
     const wb = XL.utils.book_new();
-    const boatRows = data.boats.map(b=>({
-      "שם": b.name, "גוף": b.hull, "שעות מנוע": b.engineServiceHours||"",
-    }));
-    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(boatRows), "כלי שיט");
-    const maintRows = data.boats.flatMap(b=>(b.maintenance||[]).map(m=>({
-      "כלי": b.name, "תאריך": m.date, "איש צוות": m.name,
-      "סוג": m.mtype, "תחום": m.domain,
+    // פרטים
+    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet([{
+      "שם": boat.name, "גוף": boat.hull||"", "שעות מנוע": boat.engineServiceHours||""
+    }]), "פרטים");
+    // תחזוקה
+    const maintRows=(boat.maintenance||[]).map(m=>({
+      "תאריך": m.date, "איש צוות": m.name||"",
+      "סוג": m.mtype||"", "תחום": m.domain||"",
       "שעות התחלה": m.engineHours||"", "שעות סיום": m.engineEnd||"",
-      "פעולה": m.action, "סגירה": m.closing,
-      "המשך טיפול": m.followUp, "הערות": m.notes,
+      "פעולה": m.action||"", "סגירה": m.closing||"",
+      "המשך טיפול": m.followUp||"", "הערות": m.notes||"",
       "כשיר": m.operable===false?"לא":"כן"
-    })));
-    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(maintRows), "תחזוקה");
-    const sailRows = data.boats.flatMap(b=>(b.sailing||[]).map(s=>({
-      "כלי": b.name, "אתר": s.site, "תאריך": s.date,
-      "שעת התחלה": s.startTime, "שעת סיום": s.finishTime,
-      "צוות": s.crew, "הערות": s.notes||""
-    })));
-    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(sailRows), "הפלגות");
-    const permRows = data.boats.flatMap(b=>(b.permits||[]).map(p=>({
-      "כלי": b.name,
-      "תיאור פתיחה": p.openDesc, "תאריך פתיחה": p.openDate, "פותח": p.openName,
+    }));
+    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(maintRows.length?maintRows:[{}]), "תחזוקה");
+    // הפלגות
+    const sailRows=(boat.sailing||[]).map(s=>({
+      "אתר": s.site||"", "תאריך": s.date||"",
+      "שעת התחלה": s.startTime||"", "שעת סיום": s.finishTime||"",
+      "צוות": s.crew||"", "הערות": s.notes||""
+    }));
+    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(sailRows.length?sailRows:[{}]), "הפלגות");
+    // היתרים
+    const permRows=(boat.permits||[]).map(p=>({
+      "תיאור פתיחה": p.openDesc||"", "תאריך פתיחה": p.openDate||"", "פותח": p.openName||"",
       "תיאור סגירה": p.closeDesc||"", "תאריך סגירה": p.closeDate||"", "סוגר": p.closeName||""
-    })));
-    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(permRows), "היתרים");
-    const schedRows = data.boats.flatMap(b=>
-      Object.entries(b.schedule||{}).flatMap(([date, day])=>{
-        const slots = day.slots||(day.activity?[{activity:day.activity,note:day.note||""}]:[]);
-        return slots.filter(s=>s.activity).map(s=>({
-          "כלי": b.name, "תאריך": date,
-          "פעילות": s.activity, "נושא": s.subject||"",
-          "משתתפים": s.note||"", "הערות": s.remarks||""
-        }));
-      })
-    );
-    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(schedRows), "לוִז כלי");
-    const stRows = Object.entries(data.stationSchedule||{}).flatMap(([station, dates])=>
-      Object.entries(dates).flatMap(([date, cell])=>
-        (cell.jobs||[]).filter(j=>j.boatId).map(j=>{
-          const b=data.boats.find(x=>x.id===j.boatId);
-          return {"אזור": station, "תאריך": date, "כלי": b?.name||j.boatId,
-            "מכלול": j.subsystem||"", "עבודה": j.work||"", "סטטוס": j.status||"pending"};
-        })
+    }));
+    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(permRows.length?permRows:[{}]), "היתרים");
+    // לוז כלי
+    const schedRows=Object.entries(boat.schedule||{}).flatMap(([date,day])=>{
+      const slots=day.slots||(day.activity?[{activity:day.activity,note:day.note||""}]:[]);
+      return slots.filter(s=>s.activity).map(s=>({
+        "תאריך": date, "פעילות": s.activity||"", "נושא": s.subject||"",
+        "משתתפים": s.note||"", "הערות": s.remarks||""
+      }));
+    });
+    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(schedRows.length?schedRows:[{}]), "לוז כלי");
+    // אזורי עבודה
+    const stRows=Object.entries(data.stationSchedule||{}).flatMap(([station,dates])=>
+      Object.entries(dates).flatMap(([date,cell])=>
+        (cell.jobs||[]).filter(j=>j.boatId===boat.id).map(j=>({
+          "אזור": station, "תאריך": date,
+          "מכלול": j.subsystem||"", "עבודה": j.work||"", "סטטוס": j.status||"pending"
+        }))
       )
     );
-    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(stRows), "אזורי עבודה");
+    XL.utils.book_append_sheet(wb, XL.utils.json_to_sheet(stRows.length?stRows:[{}]), "אזורי עבודה");
     return wb;
   };
 
   const saveToDrive = useCallback(async (data)=>{
     const token=driveTokenRef.current;
-    if(!token || !window.XLSX) return;
+    if(!token) return;
+    let waited=0;
+    while(!window.XLSX && waited<6000){ await new Promise(r=>setTimeout(r,300)); waited+=300; }
+    if(!window.XLSX) return;
     try{
-      const wb = buildWorkbook(data);
-      if(!wb) return;
-      const buf = window.XLSX.write(wb, {type:"array", bookType:"xlsx"});
-      const fileBlob = new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-      const fileName = "skana-logbook.xlsx";
-      const mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-      const folderId = await getOrCreateFolder(token);
-      let fid=driveFileIdRef.current;
-      if(!fid){
-        const q=encodeURIComponent("name='"+fileName+"' and '"+folderId+"' in parents and trashed=false");
-        const sr=await fetch("https://www.googleapis.com/drive/v3/files?q="+q+"&spaces=drive",
-          {headers:{Authorization:"Bearer "+token}});
-        const sd=await sr.json();
-        if(sd.files?.length>0){ fid=sd.files[0].id; driveFileIdRef.current=fid; }
-      }
-      const form=new FormData();
-      const meta=fid?{name:fileName}:{name:fileName,mimeType,parents:[folderId]};
-      form.append("metadata",new Blob([JSON.stringify(meta)],{type:"application/json"}));
-      form.append("file",fileBlob);
-      if(fid){
-        await fetch("https://www.googleapis.com/upload/drive/v3/files/"+fid+"?uploadType=multipart",
-          {method:"PATCH",headers:{Authorization:"Bearer "+token},body:form});
-      } else {
-        const cr=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
-          {method:"POST",headers:{Authorization:"Bearer "+token},body:form});
-        const cd=await cr.json();
-        if(cd.id) driveFileIdRef.current=cd.id;
+      const folderId=await getOrCreateFolder(token);
+      const mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      for(const boat of data.boats){
+        const wb=buildBoatWorkbook(boat,data);
+        const buf=window.XLSX.write(wb,{type:"array",bookType:"xlsx"});
+        const fileBlob=new Blob([buf],{type:mimeType});
+        const fileName=boat.name+".xlsx";
+        let fid=driveFileIdRef.current[boat.id];
+        if(!fid){
+          const q=encodeURIComponent("name='"+fileName+"' and '"+folderId+"' in parents and trashed=false");
+          const sr=await fetch("https://www.googleapis.com/drive/v3/files?q="+q+"&spaces=drive",
+            {headers:{Authorization:"Bearer "+token}});
+          const sd=await sr.json();
+          if(sd.files?.length>0){ fid=sd.files[0].id; driveFileIdRef.current[boat.id]=fid; }
+        }
+        const form=new FormData();
+        const meta=fid?{name:fileName}:{name:fileName,mimeType,parents:[folderId]};
+        form.append("metadata",new Blob([JSON.stringify(meta)],{type:"application/json"}));
+        form.append("file",fileBlob);
+        if(fid){
+          await fetch("https://www.googleapis.com/upload/drive/v3/files/"+fid+"?uploadType=multipart",
+            {method:"PATCH",headers:{Authorization:"Bearer "+token},body:form});
+        } else {
+          const cr=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+            {method:"POST",headers:{Authorization:"Bearer "+token},body:form});
+          const cd=await cr.json();
+          if(cd.id) driveFileIdRef.current[boat.id]=cd.id;
+        }
       }
       setDriveBackedUp(new Date().toLocaleTimeString("he-IL"));
     }catch(e){console.error("Drive backup error:",e);}
