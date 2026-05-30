@@ -1015,8 +1015,49 @@ export default function App() {
         }catch(be){console.error("Drive backup error for boat",boat.name,be);}
       }
       setDriveBackedUp(new Date().toLocaleTimeString("he-IL"));
+      // Weekly JSON snapshot
+      await saveWeeklySnapshot(token, folderId, data);
     }catch(e){console.error("Drive backup error:",e);}
   },[]);
+
+  const saveWeeklySnapshot = async (token, folderId, data) => {
+    try{
+      const WEEKLY_KEY = "lastWeeklyBackup";
+      const last = localStorage.getItem(WEEKLY_KEY);
+      const now = new Date();
+      const daysSinceLast = last ? (now - new Date(last)) / (1000*60*60*24) : 999;
+      if(daysSinceLast < 7) return;
+      // Get or create "Weekly backup" subfolder inside App backup
+      const sq=encodeURIComponent("name='Weekly backup' and mimeType='application/vnd.google-apps.folder' and '"+folderId+"' in parents and trashed=false");
+      const sr=await fetch("https://www.googleapis.com/drive/v3/files?q="+sq+"&spaces=drive",
+        {headers:{Authorization:"Bearer "+token}});
+      const sd=await sr.json();
+      let weeklyFolderId;
+      if(sd.files?.length>0){
+        weeklyFolderId=sd.files[0].id;
+      } else {
+        const cr=await fetch("https://www.googleapis.com/drive/v3/files",{
+          method:"POST",
+          headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
+          body:JSON.stringify({name:"Weekly backup",mimeType:"application/vnd.google-apps.folder",parents:[folderId]})
+        });
+        const cd=await cr.json();
+        weeklyFolderId=cd.id;
+      }
+      const dateStr = localISO(now);
+      const fileName = "backup_" + dateStr + ".json";
+      const fileBlob = new Blob([JSON.stringify(data)], {type:"application/json"});
+      const form = new FormData();
+      form.append("metadata", new Blob([JSON.stringify({name:fileName, mimeType:"application/json", parents:[weeklyFolderId]})], {type:"application/json"}));
+      form.append("file", fileBlob);
+      const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+        {method:"POST", headers:{Authorization:"Bearer "+token}, body:form});
+      if(res.ok){
+        localStorage.setItem(WEEKLY_KEY, now.toISOString());
+        console.log("Weekly snapshot saved:", fileName);
+      }
+    }catch(e){console.error("Weekly snapshot error:",e);}
+  };
 
   useEffect(()=>{
     if(!user || !user.email.endsWith("@"+APPROVER_DOMAIN)) return;
