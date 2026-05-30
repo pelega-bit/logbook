@@ -1308,16 +1308,21 @@ export default function App() {
                   <button className="action-btn" onClick={()=>setModal({type:"maint"})}>+ רשומה חדשה</button>
                 </div>
                 <div style={{overflowX:"auto"}}>
-                  <table className="tbl" style={{tableLayout:"fixed",minWidth:1100}}>
-                    <colgroup>
-                      <col style={{width:90}}/><col style={{width:90}}/><col style={{width:70}}/><col style={{width:80}}/><col style={{width:70}}/>
-                      <col style={{width:70}}/><col style={{width:70}}/><col style={{width:70}}/>
-                      <col style={{width:180}}/><col style={{width:180}}/><col style={{width:140}}/><col style={{width:100}}/><col style={{width:60}}/>
-                    </colgroup>
+                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1260}}>
                     <thead><tr>
-                      <th>תאריך</th><th>איש צוות</th><th>סוג</th><th>תחום</th><th>כשירות</th><th>שע׳ התחלה</th><th>שע׳ סיום</th><th>זמן הפעלה</th>
-                      <th>תיאור הפעילות</th><th>פרטי פעולה וסגירה</th>
-                      <th>משימות לביצוע</th><th>הערות</th><th></th>
+                      <th style={{width:90}}>תאריך</th>
+                      <th style={{width:90}}>איש צוות</th>
+                      <th style={{width:72}}>סוג</th>
+                      <th style={{width:80}}>תחום</th>
+                      <th style={{width:72}}>כשירות</th>
+                      <th style={{width:68}}>שע׳ התחלה</th>
+                      <th style={{width:68}}>שע׳ סיום</th>
+                      <th style={{width:68}}>זמן הפעלה</th>
+                      <th style={{width:200}}>תיאור הפעילות</th>
+                      <th style={{width:200}}>פרטי פעולה וסגירה</th>
+                      <th style={{width:150}}>משימות לביצוע</th>
+                      <th style={{width:100}}>הערות</th>
+                      <th style={{width:58}}></th>
                     </tr></thead>
                     <tbody>
                       {(boat.maintenance||[]).map(m=>{
