@@ -586,7 +586,7 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign, isApprover, 
                               </select>
                               <input type="text"
                                 value={job.subsystem||""}
-                                placeholder="מכלול..."
+                                placeholder="סטאפ נדרש..."
                                 onChange={e=>updateJob({subsystem:e.target.value})}
                                 style={{width:"100%",padding:"4px 6px",marginBottom:4,
                                   background:"transparent",
@@ -888,7 +888,7 @@ export default function App() {
         (cell.jobs||[]).filter(j=>j.boatId).map(j=>{
           const b=fleet.boats.find(x=>x.id===j.boatId);
           return {"אזור": station, "תאריך": date, "כלי": b?.name||j.boatId,
-            "מכלול": j.subsystem||"", "עבודה": j.work||"", "סטטוס": j.status||"pending"};
+            "סטאפ נדרש": j.subsystem||"", "עבודה": j.work||"", "סטטוס": j.status||"pending"};
         })
       )
     );
@@ -968,7 +968,7 @@ export default function App() {
       Object.entries(dates).flatMap(([date,cell])=>
         (cell.jobs||[]).filter(j=>j.boatId===boat.id).map(j=>({
           "אזור": station, "תאריך": date,
-          "מכלול": j.subsystem||"", "עבודה": j.work||"", "סטטוס": j.status||"pending"
+          "סטאפ נדרש": j.subsystem||"", "עבודה": j.work||"", "סטטוס": j.status||"pending"
         }))
       )
     );
