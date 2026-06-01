@@ -388,7 +388,7 @@ function PermitModal({ entry, onSave, onClose }) {
 }
 
 function SailingModal({ entry, onSave, onClose }) {
-  const [form, setForm] = useState(entry||{site:"",date:today(),startTime:"",finishTime:"",crew:"",notes:""});
+  const [form, setForm] = useState(entry||{site:"",date:today(),startTime:"",finishTime:"",crew:"",notes:"",folderLink:""});
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
   const start=parseFloat(form.startTime)||0;
   const end=parseFloat(form.finishTime)||0;
@@ -406,6 +406,7 @@ function SailingModal({ entry, onSave, onClose }) {
       </div>
       <div className="field"><label>צוות</label><input value={form.crew} onChange={e=>f("crew",e.target.value)}/></div>
       <div className="field"><label>פירוט כללי / אירוע חשוב לציון</label><textarea value={form.notes||""} onChange={e=>f("notes",e.target.value)} style={{minHeight:"60px"}}/></div>
+      <div className="field"><label>לינק לתיקייה</label><input value={form.folderLink||""} onChange={e=>f("folderLink",e.target.value)} placeholder="הדבק לינק לGoogle Drive / Docs..." style={{direction:"ltr",textAlign:"left"}}/></div>
       <div className="modal-actions">
         <button className="btn-save" onClick={()=>form.site&&onSave(form)}>שמור</button>
         <button className="btn-cancel" onClick={onClose}>ביטול</button>
@@ -1279,13 +1280,29 @@ export default function App() {
                 // Sync: if synced station, update boat schedules too
                 if(SYNCED_STATIONS.has(station)){
                   const assignedIds=new Set((cellData.jobs||[]).filter(j=>j.boatId&&!j._auto).map(j=>j.boatId));
+                  // Find boats that were in previous cell but removed now
+                  const prevJobs=((f.stationSchedule||{})[station]||{})[date]?.jobs||[];
+                  const prevIds=new Set(prevJobs.filter(j=>j.boatId&&!j._auto).map(j=>j.boatId));
+                  const removedIds=new Set([...prevIds].filter(id=>!assignedIds.has(id)));
                   const newBoats=f.boats.map(boat=>{
-                    if(!assignedIds.has(boat.id)) return boat;
-                    const dd=(boat.schedule||{})[date]||{};
-                    const slots=dd.slots||(dd.activity?[{activity:dd.activity,note:"",remarks:""}]:[{activity:"",note:"",remarks:""}]);
-                    if(slots.some(s=>s.activity===station)) return boat;
-                    const newSlots=slots[0]?.activity?[...slots,{activity:station,note:"",remarks:""}]:[{activity:station,note:"",remarks:""}];
-                    return {...boat,schedule:{...(boat.schedule||{}),[date]:{slots:newSlots}}};
+                    // Add station to boat schedule if newly assigned
+                    if(assignedIds.has(boat.id)){
+                      const dd=(boat.schedule||{})[date]||{};
+                      const slots=dd.slots||(dd.activity?[{activity:dd.activity,note:"",remarks:""}]:[{activity:"",note:"",remarks:""}]);
+                      if(slots.some(s=>s.activity===station)) return boat;
+                      const newSlots=slots[0]?.activity?[...slots,{activity:station,note:"",remarks:""}]:[{activity:station,note:"",remarks:""}];
+                      return {...boat,schedule:{...(boat.schedule||{}),[date]:{slots:newSlots}}};
+                    }
+                    // Remove station from boat schedule if boat was removed
+                    if(removedIds.has(boat.id)){
+                      const dd=(boat.schedule||{})[date]||{};
+                      const slots=(dd.slots||(dd.activity?[{activity:dd.activity,note:"",remarks:""}]:[])).filter(s=>s.activity!==station);
+                      const newSched={...(boat.schedule||{})};
+                      if(slots.length===0){ delete newSched[date]; }
+                      else { newSched[date]={...dd,slots}; }
+                      return {...boat,schedule:newSched};
+                    }
+                    return boat;
                   });
                   return {...f,stationSchedule:newStation,boats:newBoats};
                 }
@@ -1432,7 +1449,7 @@ export default function App() {
                   <button className="action-btn" onClick={()=>setModal({type:"sailing"})}>+ הפלגה חדשה</button>
                 </div>
                 <table className="tbl">
-                  <thead><tr><th>אתר</th><th>תאריך</th><th>שע׳ מנוע התחלה</th><th>שע׳ מנוע סיום</th><th>זמן הפעלה</th><th>צוות</th><th>פירוט</th><th></th></tr></thead>
+                  <thead><tr><th>אתר</th><th>תאריך</th><th>שע׳ מנוע התחלה</th><th>שע׳ מנוע סיום</th><th>זמן הפעלה</th><th>צוות</th><th>פירוט</th><th>תיקייה</th><th></th></tr></thead>
                   <tbody>
                     {(boat.sailing||[]).map(s=>(
                       <tr key={s.id}>
@@ -1443,6 +1460,7 @@ export default function App() {
                         <td className="mono" style={{color:"var(--orange2)"}}>{fmtDuration(tripMins(s))}</td>
                         <td style={{fontSize:12,color:"var(--slate)"}}>{s.crew}</td>
                         <td style={{fontSize:12,color:"var(--slate)",maxWidth:160}}>{s.notes||"—"}</td>
+                        <td>{s.folderLink?<a href={s.folderLink} target="_blank" rel="noreferrer" style={{color:"var(--orange2)",fontSize:12}}>פתח &#8599;</a>:"—"}</td>
                         <td><div style={{display:"flex",gap:5}}>
                           <button className="icon-btn" onClick={()=>setModal({type:"sailing",data:s})}>&#9999;</button>
                           <button className="delete-btn" onClick={()=>setConfirm({msg:"האם אתה בטוח שברצונך למחוק הפלגה זו?",onYes:()=>listDel("sailing",s.id)})}>&#x2715;</button>
