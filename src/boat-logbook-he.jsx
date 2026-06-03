@@ -1120,10 +1120,11 @@ export default function App() {
   if (!fleet) return <div style={{minHeight:"100vh",background:"#0a0d14",display:"flex",alignItems:"center",justifyContent:"center",color:"#e8530a",fontSize:14}}>טוען…</div>;
 
   const listSave=(field,prefix)=>(form)=>{
+    const newId=prefix+uid();
     updateBoat(selectedId,b=>{
       const list=modal.data
         ?b[field].map(x=>x.id===modal.data.id?{...x,...form}:x)
-        :[{id:prefix+uid(),...form},...(b[field]||[])];
+        :[{id:newId,...form},...(b[field]||[])];
       return {...b,[field]:list};
     });
     // Create Asana task if new maintenance record with followUp
@@ -1134,15 +1135,34 @@ export default function App() {
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           taskName: form.followUp,
+          boatName: boatName,
           notes: `כלי: ${boatName}\nתאריך: ${form.date}\nסוג: ${form.mtype}\nתחום: ${form.domain}\n\nתיאור הפעילות:\n${form.action||""}\n\nסגירה:\n${form.closing||""}`
         })
-      }).then(r=>r.json()).then(d=>{ if(d.gid) console.log("Asana task created:",d.permalink_url); })
-        .catch(e=>console.error("Asana error:",e));
+      }).then(r=>r.json()).then(d=>{
+        if(d.gid){
+          // Store Asana GID in the maintenance record
+          updateBoat(selectedId,b=>({...b,
+            maintenance:b.maintenance.map(m=>m.id===newId?{...m,asanaTaskGid:d.gid}:m)
+          }));
+        }
+      }).catch(e=>console.error("Asana error:",e));
     }
     setModal(null);
   };
-  const listDel=(field,id)=>
+  const listDel=(field,id)=>{
+    // Delete Asana task if maintenance record has one
+    if(field==="maintenance"){
+      const record=fleet?.boats?.find(b=>b.id===selectedId)?.maintenance?.find(m=>m.id===id);
+      if(record?.asanaTaskGid){
+        fetch("/api/delete-asana-task",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({taskGid:record.asanaTaskGid})
+        }).catch(e=>console.error("Asana delete error:",e));
+      }
+    }
     updateBoat(selectedId,b=>({...b,[field]:b[field].filter(x=>x.id!==id)}));
+  };
 
   const saveSwVersion=(lruId,form)=>{
     updateBoat(selectedId,b=>({...b,
