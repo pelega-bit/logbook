@@ -9,6 +9,7 @@ const PLATFORM_MAP = {
   "Sali":           "1215265125118174",
   "Rib":            "1215265125118175",
   "GCS":            "1215265125118176",
+  "Stingray":       "1215332306493746",
 };
 
 function getPlatformGid(boatName) {
@@ -26,6 +27,7 @@ function getPlatformGid(boatName) {
   if (lower.includes("sali")) return PLATFORM_MAP["Sali"];
   if (lower.includes("rib")) return PLATFORM_MAP["Rib"];
   if (lower.includes("gcs")) return PLATFORM_MAP["GCS"];
+  if (lower.includes("stingray")) return PLATFORM_MAP["Stingray"];
   return null;
 }
 
