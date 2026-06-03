@@ -1126,6 +1126,19 @@ export default function App() {
         :[{id:prefix+uid(),...form},...(b[field]||[])];
       return {...b,[field]:list};
     });
+    // Create Asana task if new maintenance record with followUp
+    if(field==="maintenance" && !modal.data && form.followUp){
+      const boatName=fleet?.boats?.find(b=>b.id===selectedId)?.name||"";
+      fetch("/api/create-asana-task",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          taskName: form.followUp,
+          notes: `כלי: ${boatName}\nתאריך: ${form.date}\nסוג: ${form.mtype}\nתחום: ${form.domain}\n\nתיאור הפעילות:\n${form.action||""}\n\nסגירה:\n${form.closing||""}`
+        })
+      }).then(r=>r.json()).then(d=>{ if(d.gid) console.log("Asana task created:",d.permalink_url); })
+        .catch(e=>console.error("Asana error:",e));
+    }
     setModal(null);
   };
   const listDel=(field,id)=>
