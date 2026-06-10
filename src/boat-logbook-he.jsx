@@ -127,6 +127,7 @@ const TABS = [
   {id:"sailing",     label:"לוג הפלגות"},
   {id:"lruTrack",    label:"מעקב LRU"},
   {id:"schedule",    label:'לו"ז כלי'},
+  {id:"info",        label:"מידע כללי"},
 ];
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap');
@@ -307,9 +308,15 @@ function BoatModal({ boat, onSave, onClose }) {
     <Modal title={boat?"עריכת כלי שיט":"הוספת כלי שיט"} onClose={onClose}>
       <div className="field"><label>שם כלי השיט</label><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
       <div className="field"><label>מזהה גוף</label><input value={form.hull} onChange={e=>f("hull",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
+      <div style={{fontWeight:600,fontSize:13,color:"var(--orange2)",marginTop:8}}>⛵ סירה</div>
       <div className="grid3">
-        <div className="field"><label>תוקף רישיון סירה</label><input type="date" value={form.licenseExpiry||""} onChange={e=>f("licenseExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
+        <div className="field"><label>תוקף רישיון</label><input type="date" value={form.licenseExpiry||""} onChange={e=>f("licenseExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
         <div className="field"><label>תוקף ביטוח</label><input type="date" value={form.insuranceExpiry||""} onChange={e=>f("insuranceExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
+      </div>
+      <div style={{fontWeight:600,fontSize:13,color:"var(--orange2)",marginTop:8}}>🚛 עגלה</div>
+      <div className="grid3">
+        <div className="field"><label>תוקף רישיון</label><input type="date" value={form.trailerLicenseExpiry||""} onChange={e=>f("trailerLicenseExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
+        <div className="field"><label>תוקף ביטוח</label><input type="date" value={form.trailerInsuranceExpiry||""} onChange={e=>f("trailerInsuranceExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
       </div>
       <div className="modal-actions">
         <button className="btn-save" onClick={()=>form.name&&onSave(form)}>שמור</button>
@@ -1358,8 +1365,6 @@ export default function App() {
                 <div className="vessel-meta">{boat.hull}</div>
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                {boat.licenseExpiry&&(()=>{const exp=new Date(boat.licenseExpiry);exp.setHours(0,0,0,0);const expired=exp<new Date(new Date().toDateString());return(<span style={{display:"flex",flexDirection:"column",alignItems:"center",background:expired?"rgba(229,57,53,0.1)":"rgba(255,255,255,0.06)",border:"0.5px solid "+(expired?"rgba(229,57,53,0.4)":"rgba(255,255,255,0.12)"),borderRadius:4,padding:"3px 10px",minWidth:80}}><span style={{fontSize:10,color:"var(--slate)"}}>רישיון סירה</span><span style={{fontFamily:"var(--mono)",fontSize:12,fontWeight:700,color:expired?"#e53935":"#4caf50"}}>{boat.licenseExpiry}</span></span>);})()}
-                {boat.insuranceExpiry&&(()=>{const exp=new Date(boat.insuranceExpiry);exp.setHours(0,0,0,0);const expired=exp<new Date(new Date().toDateString());return(<span style={{display:"flex",flexDirection:"column",alignItems:"center",background:expired?"rgba(229,57,53,0.1)":"rgba(255,255,255,0.06)",border:"0.5px solid "+(expired?"rgba(229,57,53,0.4)":"rgba(255,255,255,0.12)"),borderRadius:4,padding:"3px 10px",minWidth:80}}><span style={{fontSize:10,color:"var(--slate)"}}>ביטוח</span><span style={{fontFamily:"var(--mono)",fontSize:12,fontWeight:700,color:expired?"#e53935":"#4caf50"}}>{boat.insuranceExpiry}</span></span>);})()}
                 <span className={"operable-badge "+(operable?"operable-yes":"operable-no")}>
                   {operable?"שמיש":"לא שמיש"}
                 </span>
@@ -1686,6 +1691,37 @@ export default function App() {
                   </table>
                 </div>
               </>)}
+
+            </div>
+
+              {tab==="info" && (()=>{
+                const expiryColor=(dateStr)=>{
+                  if(!dateStr) return "var(--slate)";
+                  const d=new Date(dateStr); d.setHours(0,0,0,0);
+                  return d<new Date(new Date().toDateString())?"#e53935":"#4caf50";
+                };
+                const ExpiryRow=({label,dateStr})=>dateStr?(<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"0.5px solid var(--navy3)"}}>
+                  <span style={{fontSize:13,color:"var(--slate)"}}>{label}</span>
+                  <span style={{fontFamily:"var(--mono)",fontSize:13,fontWeight:700,color:expiryColor(dateStr)}}>{dateStr}{expiryColor(dateStr)==="#e53935"?" ⚠":""}</span>
+                </div>):null;
+                const hasBoat=boat.licenseExpiry||boat.insuranceExpiry;
+                const hasTrailer=boat.trailerLicenseExpiry||boat.trailerInsuranceExpiry;
+                return(<>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,padding:24}}>
+                    {hasBoat&&(<div style={{background:"var(--navy2)",border:"0.5px solid var(--navy3)",borderRadius:8,padding:"14px 18px"}}>
+                      <div style={{fontSize:13,color:"var(--orange2)",fontWeight:600,marginBottom:10}}>⛵ סירה</div>
+                      <ExpiryRow label="רישיון" dateStr={boat.licenseExpiry}/>
+                      <ExpiryRow label="ביטוח" dateStr={boat.insuranceExpiry}/>
+                    </div>)}
+                    {hasTrailer&&(<div style={{background:"var(--navy2)",border:"0.5px solid var(--navy3)",borderRadius:8,padding:"14px 18px"}}>
+                      <div style={{fontSize:13,color:"var(--orange2)",fontWeight:600,marginBottom:10}}>🚛 עגלה</div>
+                      <ExpiryRow label="רישיון" dateStr={boat.trailerLicenseExpiry}/>
+                      <ExpiryRow label="ביטוח" dateStr={boat.trailerInsuranceExpiry}/>
+                    </div>)}
+                    {!hasBoat&&!hasTrailer&&(<div style={{gridColumn:"1/-1",color:"var(--slate)",fontSize:14,padding:24,textAlign:"center"}}>אין מידע. לחץ על ✏ עריכה כדי להוסיף.</div>)}
+                  </div>
+                </>);
+              })()}
 
             </div>
           </>)}
