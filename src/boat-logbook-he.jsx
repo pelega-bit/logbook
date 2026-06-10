@@ -318,6 +318,12 @@ function BoatModal({ boat, onSave, onClose }) {
         <div className="field"><label>תוקף רישיון</label><input type="date" value={form.trailerLicenseExpiry||""} onChange={e=>f("trailerLicenseExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
         <div className="field"><label>תוקף ביטוח</label><input type="date" value={form.trailerInsuranceExpiry||""} onChange={e=>f("trailerInsuranceExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
       </div>
+      <div style={{fontWeight:600,fontSize:13,color:"var(--orange2)",marginTop:8}}>⚙️ מפרט טכני</div>
+      <div className="grid3">
+        <div className="field"><label>כוח סוס (HP)</label><input type="number" value={form.horsepower||""} onChange={e=>f("horsepower",e.target.value)} style={{direction:"ltr",textAlign:"left"}} placeholder="e.g. 150"/></div>
+        <div className="field"><label>משקל (ק"ג)</label><input type="number" value={form.weight||""} onChange={e=>f("weight",e.target.value)} style={{direction:"ltr",textAlign:"left"}} placeholder="e.g. 1200"/></div>
+        <div className="field"><label>משקל מטען מקס׳ (ק"ג)</label><input type="number" value={form.maxPayload||""} onChange={e=>f("maxPayload",e.target.value)} style={{direction:"ltr",textAlign:"left"}} placeholder="e.g. 500"/></div>
+      </div>
       <div className="modal-actions">
         <button className="btn-save" onClick={()=>form.name&&onSave(form)}>שמור</button>
         <button className="btn-cancel" onClick={onClose}>ביטול</button>
@@ -1718,7 +1724,15 @@ export default function App() {
                       <ExpiryRow label="רישיון" dateStr={boat.trailerLicenseExpiry}/>
                       <ExpiryRow label="ביטוח" dateStr={boat.trailerInsuranceExpiry}/>
                     </div>)}
-                    {!hasBoat&&!hasTrailer&&(<div style={{gridColumn:"1/-1",color:"var(--slate)",fontSize:14,padding:24,textAlign:"center"}}>אין מידע. לחץ על ✏ עריכה כדי להוסיף.</div>)}
+                    {(boat.horsepower||boat.weight||boat.maxPayload)&&(<div style={{gridColumn:"1/-1",background:"var(--navy2)",border:"0.5px solid var(--navy3)",borderRadius:8,padding:"14px 18px"}}>
+                      <div style={{fontSize:13,color:"var(--orange2)",fontWeight:600,marginBottom:10}}>⚙️ מפרט טכני</div>
+                      <div style={{display:"flex",gap:32,flexWrap:"wrap"}}>
+                        {boat.horsepower&&<div><div style={{fontSize:10,color:"var(--slate)",marginBottom:2}}>כוח סוס</div><div style={{fontFamily:"var(--mono)",fontSize:15,fontWeight:700,color:"var(--white)"}}>{boat.horsepower} <span style={{fontSize:11,color:"var(--slate)"}}>HP</span></div></div>}
+                        {boat.weight&&<div><div style={{fontSize:10,color:"var(--slate)",marginBottom:2}}>משקל</div><div style={{fontFamily:"var(--mono)",fontSize:15,fontWeight:700,color:"var(--white)"}}>{boat.weight} <span style={{fontSize:11,color:"var(--slate)"}}>ק"ג</span></div></div>}
+                        {boat.maxPayload&&<div><div style={{fontSize:10,color:"var(--slate)",marginBottom:2}}>משקל מטען מקס׳</div><div style={{fontFamily:"var(--mono)",fontSize:15,fontWeight:700,color:"var(--white)"}}>{boat.maxPayload} <span style={{fontSize:11,color:"var(--slate)"}}>ק"ג</span></div></div>}
+                      </div>
+                    </div>)}
+                    {!hasBoat&&!hasTrailer&&!boat.horsepower&&!boat.weight&&!boat.maxPayload&&(<div style={{gridColumn:"1/-1",color:"var(--slate)",fontSize:14,padding:24,textAlign:"center"}}>אין מידע. לחץ על ✏ עריכה כדי להוסיף.</div>)}
                   </div>
                 </>);
               })()}
