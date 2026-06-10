@@ -307,6 +307,10 @@ function BoatModal({ boat, onSave, onClose }) {
     <Modal title={boat?"עריכת כלי שיט":"הוספת כלי שיט"} onClose={onClose}>
       <div className="field"><label>שם כלי השיט</label><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
       <div className="field"><label>מזהה גוף</label><input value={form.hull} onChange={e=>f("hull",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
+      <div className="grid3">
+        <div className="field"><label>תוקף רישיון סירה</label><input type="date" value={form.licenseExpiry||""} onChange={e=>f("licenseExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
+        <div className="field"><label>תוקף ביטוח</label><input type="date" value={form.insuranceExpiry||""} onChange={e=>f("insuranceExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
+      </div>
       <div className="modal-actions">
         <button className="btn-save" onClick={()=>form.name&&onSave(form)}>שמור</button>
         <button className="btn-cancel" onClick={onClose}>ביטול</button>
@@ -1354,6 +1358,8 @@ export default function App() {
                 <div className="vessel-meta">{boat.hull}</div>
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                {boat.licenseExpiry&&(()=>{const exp=new Date(boat.licenseExpiry);exp.setHours(0,0,0,0);const expired=exp<new Date(new Date().toDateString());return(<span style={{display:"flex",flexDirection:"column",alignItems:"center",background:expired?"rgba(229,57,53,0.1)":"rgba(255,255,255,0.06)",border:"0.5px solid "+(expired?"rgba(229,57,53,0.4)":"rgba(255,255,255,0.12)"),borderRadius:4,padding:"3px 10px",minWidth:80}}><span style={{fontSize:10,color:"var(--slate)"}}>רישיון סירה</span><span style={{fontFamily:"var(--mono)",fontSize:12,fontWeight:700,color:expired?"#e53935":"#4caf50"}}>{boat.licenseExpiry}</span></span>);})()}
+                {boat.insuranceExpiry&&(()=>{const exp=new Date(boat.insuranceExpiry);exp.setHours(0,0,0,0);const expired=exp<new Date(new Date().toDateString());return(<span style={{display:"flex",flexDirection:"column",alignItems:"center",background:expired?"rgba(229,57,53,0.1)":"rgba(255,255,255,0.06)",border:"0.5px solid "+(expired?"rgba(229,57,53,0.4)":"rgba(255,255,255,0.12)"),borderRadius:4,padding:"3px 10px",minWidth:80}}><span style={{fontSize:10,color:"var(--slate)"}}>ביטוח</span><span style={{fontFamily:"var(--mono)",fontSize:12,fontWeight:700,color:expired?"#e53935":"#4caf50"}}>{boat.insuranceExpiry}</span></span>);})()}
                 <span className={"operable-badge "+(operable?"operable-yes":"operable-no")}>
                   {operable?"שמיש":"לא שמיש"}
                 </span>
