@@ -900,6 +900,8 @@ export default function App() {
 
   const driveFolderIdRef = useRef(null);
   const folderPromiseRef = useRef(null);
+  const maintTblWrapRef = useRef(null);
+  const maintSbarRef = useRef(null);
 
   const getOrCreateFolder = async (token) => {
     if(driveFolderIdRef.current) return driveFolderIdRef.current;
@@ -1397,8 +1399,8 @@ export default function App() {
                   <div className="section-title">פעילות תחזוקה</div>
                   <button className="action-btn" onClick={()=>setModal({type:"maint"})}>+ רשומה חדשה</button>
                 </div>
-                <div style={{overflowX:"auto"}}>
-                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1160}}>
+                <div ref={maintTblWrapRef} style={{overflowX:"auto"}} onScroll={e=>{if(maintSbarRef.current)maintSbarRef.current.scrollLeft=e.target.scrollLeft;}}>
+                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1260}}>
                     <thead><tr>
                       <th style={{width:90}}>תאריך</th>
                       <th style={{width:90}}>איש צוות</th>
@@ -1409,7 +1411,7 @@ export default function App() {
                       <th style={{width:200}}>תיאור הפעילות</th>
                       <th style={{width:200}}>פרטי פעולה</th>
                       <th style={{width:150}}>משימות לביצוע</th>
-                      <th style={{width:100}}>הערות</th>
+                      <th style={{width:200}}>הערות</th>
                       <th style={{width:58}}></th>
                     </tr></thead>
                     <tbody>
@@ -1438,6 +1440,7 @@ export default function App() {
                     </tbody>
                   </table>
                 </div>
+                <div ref={maintSbarRef} style={{overflowX:"auto",position:"sticky",bottom:0,height:12,marginBottom:2}} onScroll={e=>{if(maintTblWrapRef.current)maintTblWrapRef.current.scrollLeft=e.target.scrollLeft;}}><div style={{width:1260,height:1}}/></div>
                 {(boat.maintenance||[]).length===0&&<div className="empty">אין רשומות תחזוקה עדיין.</div>}
               </>)}
 
