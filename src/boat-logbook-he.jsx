@@ -1263,7 +1263,6 @@ export default function App() {
                 <span style={{fontSize:14}}>{op?"🟢":"🔴"}</span>
                 <div style={{textAlign:"right"}}>
                   <div className="boat-name">{b.name}</div>
-                  <div className="boat-hull">{b.hull}</div>
                 </div>
               </button>
             );
