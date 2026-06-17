@@ -1233,19 +1233,31 @@ export default function App() {
     return acc+(end>start?end-start:0);
   },0);
   // Add engine hours from maintenance records
+  const isDualEngine=!!(boat?.name?.toLowerCase().includes("tiger"));
   const maintEngineHours=(boat?.maintenance||[]).reduce((acc,m)=>{
-    const start=0;
     const end=parseFloat(m.engineWork)||0;
-    return acc+(end>start?end-start:0);
+    return acc+(end>0?end:0);
+  },0);
+  const maintEngineHoursLeft=(boat?.maintenance||[]).reduce((acc,m)=>{
+    const end=parseFloat(m.engineWorkLeft)||0;
+    return acc+(end>0?end:0);
   },0);
   const totalEngineHours=totalSailingHours+maintEngineHours;
+  const totalEngineHoursLeft=totalSailingHours+maintEngineHoursLeft;
   const engineUsed=boat&&boat._engineResetAt!=null
     ?(totalEngineHours-boat._engineResetAt)%10
     :totalEngineHours%10;
+  const engineUsedLeft=boat&&boat._engineResetAtLeft!=null
+    ?(totalEngineHoursLeft-boat._engineResetAtLeft)%10
+    :totalEngineHoursLeft%10;
   const engineRemaining=Math.max(0,10-engineUsed);
+  const engineRemainingLeft=Math.max(0,10-engineUsedLeft);
   const enginePct=(engineRemaining/10)*100;
+  const enginePctLeft=(engineRemainingLeft/10)*100;
   const engineColor=engineRemaining>5?"#4ade80":engineRemaining>2?"#fbbf24":"#f87171";
+  const engineColorLeft=engineRemainingLeft>5?"#4ade80":engineRemainingLeft>2?"#fbbf24":"#f87171";
   const resetEngineHours=()=>updateBoat(selectedId,b=>({...b,_engineResetAt:totalEngineHours}));
+  const resetEngineHoursLeft=()=>updateBoat(selectedId,b=>({...b,_engineResetAtLeft:totalEngineHoursLeft}));
 
   const lastMaint=boat?[...(boat.maintenance||[])].sort((a,b)=>b.date.localeCompare(a.date))[0]:null;
   const operable=lastMaint?lastMaint.operable!==false:true;
@@ -1391,39 +1403,60 @@ export default function App() {
             <div className="content">
 
               {tab==="maintenance" && (<>
-                <div className="engine-bar">
+                <div className="engine-bar" style={{flexWrap:"wrap",gap:16}}>
                   <div className="engine-gauge-wrap">
                     <div className="engine-gauge-label">
-                      <span className="engine-gauge-title">⚙️ שעות עד טיפול הבא למנוע</span>
+                      <span className="engine-gauge-title">⚙️ {isDualEngine?"מנוע ימין — ":""}שעות עד טיפול הבא</span>
                       <span className="engine-gauge-value" style={{color:engineColor}}>{engineRemaining.toFixed(1)}h</span>
                     </div>
                     <div className="engine-gauge-track">
                       <div className="engine-gauge-fill" style={{width:enginePct+"%",background:engineColor}}/>
                     </div>
-                    <div className="engine-note">מתעדכן לפי שעות הפלגה ותחזוקה מצטברות · טיפול כל 10 שעות</div>
+                    <div className="engine-note">טיפול כל 10 שעות · סך: {totalEngineHours.toFixed(1)} שע׳</div>
                   </div>
+                  {isDualEngine&&(<>
+                    <div style={{width:"1px",background:"var(--navy3)",alignSelf:"stretch"}}/>
+                    <div className="engine-gauge-wrap">
+                      <div className="engine-gauge-label">
+                        <span className="engine-gauge-title">⚙️ מנוע שמאל — שעות עד טיפול הבא</span>
+                        <span className="engine-gauge-value" style={{color:engineColorLeft}}>{engineRemainingLeft.toFixed(1)}h</span>
+                      </div>
+                      <div className="engine-gauge-track">
+                        <div className="engine-gauge-fill" style={{width:enginePctLeft+"%",background:engineColorLeft}}/>
+                      </div>
+                      <div className="engine-note">טיפול כל 10 שעות · סך: {totalEngineHoursLeft.toFixed(1)} שע׳</div>
+                    </div>
+                  </>)}
                   <div style={{display:"flex",flexDirection:"column",gap:4,padding:"0 16px",borderRight:"1px solid var(--navy3)"}}>
                     <div style={{fontSize:10,fontWeight:700,color:"var(--slate)"}}>סך שעות מנוע</div>
-                    <div style={{fontFamily:"var(--mono)",fontSize:22,fontWeight:800,color:"var(--white)"}}>{totalEngineHours.toFixed(1)}<span style={{fontSize:11,color:"var(--slate)",marginRight:4}}>שע׳</span></div>
-                    <div style={{fontSize:10,color:"var(--slate)"}}>
-                      הפלגות: {totalSailingHours.toFixed(1)} · תחזוקה: {maintEngineHours.toFixed(1)}
-                    </div>
+                    {isDualEngine?(
+                      <>
+                        <div style={{fontFamily:"var(--mono)",fontSize:14,fontWeight:800,color:"var(--white)"}}>ימין: {totalEngineHours.toFixed(1)}<span style={{fontSize:11,color:"var(--slate)",marginRight:4}}>שע׳</span></div>
+                        <div style={{fontFamily:"var(--mono)",fontSize:14,fontWeight:800,color:"var(--white)"}}>שמאל: {totalEngineHoursLeft.toFixed(1)}<span style={{fontSize:11,color:"var(--slate)",marginRight:4}}>שע׳</span></div>
+                      </>
+                    ):(
+                      <div style={{fontFamily:"var(--mono)",fontSize:22,fontWeight:800,color:"var(--white)"}}>{totalEngineHours.toFixed(1)}<span style={{fontSize:11,color:"var(--slate)",marginRight:4}}>שע׳</span></div>
+                    )}
+                    <div style={{fontSize:10,color:"var(--slate)"}}>הפלגות: {totalSailingHours.toFixed(1)} · תחזוקה: {maintEngineHours.toFixed(1)}</div>
                   </div>
-                  <button className="engine-reset-btn" onClick={resetEngineHours}>↺ אפס לאחר טיפול</button>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    <button className="engine-reset-btn" onClick={resetEngineHours}>{isDualEngine?"↺ אפס ימין":"↺ אפס לאחר טיפול"}</button>
+                    {isDualEngine&&<button className="engine-reset-btn" onClick={resetEngineHoursLeft}>↺ אפס שמאל</button>}
+                  </div>
                 </div>
                 <div className="section-header">
                   <div className="section-title">פעילות תחזוקה</div>
                   <button className="action-btn" onClick={()=>setModal({type:"maint"})}>+ רשומה חדשה</button>
                 </div>
                 <div ref={maintTblWrapRef} style={{overflowX:"auto"}} onScroll={e=>{if(maintSbarRef.current)maintSbarRef.current.scrollLeft=e.target.scrollLeft;}}>
-                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1260}}>
+                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:isDualEngine?1340:1260}}>
                     <thead><tr>
                       <th style={{width:90}}>תאריך</th>
                       <th style={{width:90}}>איש צוות</th>
                       <th style={{width:72}}>סוג</th>
                       <th style={{width:80}}>תחום</th>
                       <th style={{width:72}}>כשירות</th>
-                      <th style={{width:100}}>זמן עבודת מנוע</th>
+                      {isDualEngine?(<><th style={{width:90}}>מנוע ימין</th><th style={{width:90}}>מנוע שמאל</th></>):<th style={{width:100}}>זמן עבודת מנוע</th>}
                       <th style={{width:200}}>תיאור הפעילות</th>
                       <th style={{width:200}}>פרטי פעולה</th>
                       <th style={{width:150}}>משימות לביצוע</th>
@@ -1441,7 +1474,7 @@ export default function App() {
                             <td><span className="pill" style={{background:c.bg,border:"1px solid "+c.border,color:c.color}}>{m.mtype}</span></td>
                             <td><span className="domain-pill">{m.domain||"—"}</span></td>
                             <td><span className={"pill "+(op2?"operable-yes":"operable-no")} style={{fontSize:10}}>{op2?"שמיש":"לא שמיש"}</span></td>
-                            <td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td>
+                            {isDualEngine?(<><td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td><td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWorkLeft||"—"}</td></>):<td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td>}
                             <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.action||""}>{m.action||"—"}</td>
                             <td style={{minWidth:100,wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{m.closing||"—"}</td>
                             <td style={{minWidth:100,fontSize:12,color:"var(--orange2)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{m.followUp||"—"}</td>
@@ -1742,7 +1775,7 @@ export default function App() {
 
       {confirm && <ConfirmModal msg={confirm.msg} onYes={()=>{confirm.onYes();setConfirm(null);}} onNo={()=>setConfirm(null)}/>}
       {modal?.type==="boat"     &&<BoatModal     boat={modal.data}  onSave={saveBoat}                    onClose={()=>setModal(null)}/>}
-      {modal?.type==="maint"    &&<MaintModal    entry={modal.data} onSave={listSave("maintenance","m")} onClose={()=>setModal(null)}/>}
+      {modal?.type==="maint"    &&<MaintModal    entry={modal.data} onSave={listSave("maintenance","m")} onClose={()=>setModal(null)} dualEngine={!!(boat?.name?.toLowerCase().includes("tiger"))}/>}
       {modal?.type==="permit"   &&<PermitModal   entry={modal.data} onSave={listSave("permits","p")}     onClose={()=>setModal(null)}/>}
       {modal?.type==="sailing"  &&<SailingModal  entry={modal.data} onSave={listSave("sailing","s")}     onClose={()=>setModal(null)}/>}
       {modal?.type==="lruTrack" &&<LruTrackModal entry={modal.data} onSave={listSave("lruTrack","lr")}   onClose={()=>setModal(null)}/>}
