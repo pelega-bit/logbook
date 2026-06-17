@@ -332,8 +332,8 @@ function BoatModal({ boat, onSave, onClose }) {
   );
 }
 
-function MaintModal({ entry, onSave, onClose }) {
-  const [form, setForm] = useState(entry||{date:today(),name:"",mtype:"תחזוקה",domain:"פלטפורמה",engineWork:"",action:"",closing:"",followUp:"",notes:"",operable:true});
+function MaintModal({ entry, onSave, onClose, dualEngine }) {
+  const [form, setForm] = useState(entry||{date:today(),name:"",mtype:"תחזוקה",domain:"פלטפורמה",engineWork:"",engineWorkLeft:"",action:"",closing:"",followUp:"",notes:"",operable:true});
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
   return (
     <Modal title={entry?"עריכת רשומה":"רשומת תחזוקה חדשה"} onClose={onClose}>
@@ -364,9 +364,22 @@ function MaintModal({ entry, onSave, onClose }) {
           </label>
         </div>
       </div>
-      <div className="grid2">
-        <div className="field"><label>זמן עבודת מנוע (שע׳)</label><input value={form.engineWork||""} onChange={e=>f("engineWork",e.target.value)} placeholder='למשל: 2.5'/></div>
-      </div>
+      {dualEngine ? (
+        <div className="grid2">
+          <div className="field" style={{border:"1px solid var(--orange)",borderRadius:6,padding:"10px 12px"}}>
+            <label style={{color:"var(--orange2)",fontWeight:700}}>⚙️ זמן עבודה מנוע ימין (שע׳)</label>
+            <input value={form.engineWork||""} onChange={e=>f("engineWork",e.target.value)} placeholder="למשל: 2.5"/>
+          </div>
+          <div className="field" style={{border:"1px solid var(--navy3)",borderRadius:6,padding:"10px 12px"}}>
+            <label style={{fontWeight:700}}>⚙️ זמן עבודה מנוע שמאל (שע׳)</label>
+            <input value={form.engineWorkLeft||""} onChange={e=>f("engineWorkLeft",e.target.value)} placeholder="למשל: 2.5"/>
+          </div>
+        </div>
+      ) : (
+        <div className="grid2">
+          <div className="field"><label>זמן עבודת מנוע (שע׳)</label><input value={form.engineWork||""} onChange={e=>f("engineWork",e.target.value)} placeholder='למשל: 2.5'/></div>
+        </div>
+      )}
       <div className="field"><label>תיאור הפעילות</label><textarea value={form.action} onChange={e=>f("action",e.target.value)}/></div>
       <div className="field"><label>פרטי הפעולה / התיקון וסגירה</label><textarea value={form.closing} onChange={e=>f("closing",e.target.value)}/></div>
       <div className="field"><label>משימות לביצוע</label><textarea value={form.followUp} onChange={e=>f("followUp",e.target.value)} style={{minHeight:"50px"}}/></div>
