@@ -25,14 +25,20 @@ async function saveFleet(data) {
   } catch {}
 }
 
-const STATIONS = ["ים", "בריכה", "דולב", "עמדה פרוסה 1", "עמדה פרוסה 2"];
+const STATIONS = ["ים", "בריכה", "דולב", "עמדה פרוסה 1", "עמדה פרוסה 2", "האנגר"];
 const SYNCED_STATIONS = new Set(["ים", "בריכה", "דולב"]);
+const GENERIC_BOATS = [
+  {id:"generic-bs", name:"Bullshark — כללי"},
+  {id:"generic-tg", name:"Tigershark — כללי"},
+  {id:"generic-ag", name:"Alligator — כללי"},
+];
 const STATION_COLORS = [
   { bg:"rgba(37,99,235,.2)",   border:"#3b82f6", color:"#60a5fa" },
   { bg:"rgba(147,197,253,.15)", border:"#7dd3fc", color:"#bae6fd" },
   { bg:"rgba(52,211,153,.15)", border:"#34d399", color:"#6ee7b7" },
   { bg:"rgba(167,139,250,.15)", border:"#a78bfa", color:"#c4b5fd" },
   { bg:"rgba(251,191,36,.15)", border:"#fbbf24", color:"#fde68a" },
+  { bg:"rgba(249,115,22,.15)", border:"#f97316", color:"#fb923c" },
 ];
 const getBoatColor = (name) => {
   if (name && name.toLowerCase().includes("unicorn")) return {color:"#f472b6",bg:"rgba(244,114,182,.15)",border:"#f472b6"};
@@ -562,7 +568,7 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign, isApprover, 
                     return (
                       <td key={d} className={d===todayStr?"today-col":""} style={{padding:"6px 8px",verticalAlign:"top"}}>
                         {jobs.map((job,ji)=>{
-                          const assignedBoat=fleet.boats.find(b=>b.id===job.boatId);
+                          const assignedBoat=fleet.boats.find(b=>b.id===job.boatId)||GENERIC_BOATS.find(b=>b.id===job.boatId);
                           const manualIdx = ji - autoBoats.length;
                           const updateJob=(patch)=>{
                             if(manualIdx < 0) return; // auto job - read only
@@ -613,6 +619,10 @@ function StationsView({ fleet, weekOffset, setWeekOffset, onAssign, isApprover, 
                                   <option key={b.id} value={b.id} disabled={conflict(station,d,b.id)}>
                                     {b.name}{conflict(station,d,b.id)?" (תפוס)":""}
                                   </option>
+                                ))}
+                                <option disabled>──────────</option>
+                                {GENERIC_BOATS.map(b=>(
+                                  <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
                               </select>
                               <input type="text"
