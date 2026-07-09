@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer";
+
 const PLATFORM_FIELD = "1214564678858501";
 const PLATFORM_MAP = {
   "BullShark 401": "1214564678858502",
@@ -29,6 +31,43 @@ function getPlatformGid(boatName) {
   if (lower.includes("gcs")) return PLATFORM_MAP["GCS"];
   if (lower.includes("stingray")) return PLATFORM_MAP["Stingray"];
   return null;
+}
+
+async function sendEmailNotification({ taskName, notes, boatName, asanaUrl }) {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return; // אם אין הגדרות מייל — ממשיכים בשקט
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
+
+  await transporter.sendMail({
+    from: `"LogBook" <${user}>`,
+    to: user,
+    subject: `🔧 בקשת עבודה חדשה: ${taskName}`,
+    html: `
+      <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px;">
+        <h2 style="color: #d97706;">⏳ בקשת עבודה ממתינה לאישורך</h2>
+        <table style="border-collapse: collapse; width: 100%;">
+          <tr>
+            <td style="padding: 8px; font-weight: bold; color: #555;">משימה:</td>
+            <td style="padding: 8px;">${taskName}</td>
+          </tr>
+          <tr style="background: #f9f9f9;">
+            <td style="padding: 8px; font-weight: bold; color: #555;">כלי שיט:</td>
+            <td style="padding: 8px;">${boatName || "לא צוין"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; font-weight: bold; color: #555;">הערות:</td>
+            <td style="padding: 8px;">${notes || "אין"}</td>
+          </tr>
+        </table>
+        ${asanaUrl ? `<p style="margin-top: 20px;"><a href="${asanaUrl}" style="background: #4f46e5; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">פתח ב-Asana ←</a></p>` : ""}
+      </div>
+    `,
+  });
 }
 
 export default async function handler(req, res) {
@@ -67,6 +106,15 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     if (!response.ok) return res.status(response.status).json(data);
+
+    // שלח מייל התראה — לא חוסם את התגובה אם נכשל
+    sendEmailNotification({
+      taskName,
+      notes,
+      boatName,
+      asanaUrl: data.data?.permalink_url,
+    }).catch((err) => console.error("Email notification failed:", err));
+
     res.status(200).json({ gid: data.data?.gid, permalink_url: data.data?.permalink_url });
   } catch (e) {
     res.status(500).json({ error: e.message });
