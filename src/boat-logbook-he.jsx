@@ -25,12 +25,13 @@ async function saveFleet(data) {
   } catch {}
 }
 
-const STATIONS = ["ים", "בריכה", "דולב", "עמדה פרוסה 1", "עמדה פרוסה 2", "האנגר", "Tigershark — כללי"];
+const STATIONS = ["ים", "בריכה", "דולב", "עמדה פרוסה 1", "עמדה פרוסה 2", "האנגר"];
 const SYNCED_STATIONS = new Set(["ים", "בריכה", "דולב"]);
 const GENERIC_BOATS = [
   {id:"generic-bs", name:"Bullshark — כללי"},
   {id:"generic-tg", name:"Tigershark — כללי"},
   {id:"generic-ag", name:"Alligator — כללי"},
+  {id:"generic-sr", name:"Stingray — כללי"},
 ];
 const STATION_COLORS = [
   { bg:"rgba(37,99,235,.2)",   border:"#3b82f6", color:"#60a5fa" },
@@ -39,7 +40,6 @@ const STATION_COLORS = [
   { bg:"rgba(167,139,250,.15)", border:"#a78bfa", color:"#c4b5fd" },
   { bg:"rgba(251,191,36,.15)", border:"#fbbf24", color:"#fde68a" },
   { bg:"rgba(249,115,22,.15)", border:"#f97316", color:"#fb923c" },
-  { bg:"rgba(20,184,166,.15)", border:"#14b8a6", color:"#2dd4bf" },
 ];
 const getBoatColor = (name) => {
   if (name && name.toLowerCase().includes("unicorn")) return {color:"#f472b6",bg:"rgba(244,114,182,.15)",border:"#f472b6"};
