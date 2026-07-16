@@ -33,6 +33,14 @@ const GENERIC_BOATS = [
   {id:"generic-ag", name:"Alligator — כללי"},
   {id:"generic-sr", name:"Stingray — כללי"},
 ];
+const SIDEBAR_GROUPS = ["כלי שיט", "GCS", "תשתית"];
+const getBoatGroup = (name) => {
+  const l = (name || "").toLowerCase();
+  if (l.includes("gcs") || l.includes("pelican") || l.includes("hmi")) return "GCS";
+  if (l.includes("pressure") || l.includes("chamber")) return "תשתית";
+  return "כלי שיט";
+};
+
 const STATION_COLORS = [
   { bg:"rgba(37,99,235,.2)",   border:"#3b82f6", color:"#60a5fa" },
   { bg:"rgba(147,197,253,.15)", border:"#7dd3fc", color:"#bae6fd" },
@@ -1305,19 +1313,28 @@ export default function App() {
             </div>
             {driveBackedUp&&<div style={{fontSize:9,color:"#34d399",marginTop:4,opacity:.7}}>☁ גובה {driveBackedUp}</div>}
           </div>
-          <div className="fleet-label">כלי שיט</div>
-          {fleet.boats.map(b=>{
-            const lm=[...(b.maintenance||[])].sort((a,c)=>c.date.localeCompare(a.date))[0];
-            const op=lm?lm.operable!==false:true;
+          {SIDEBAR_GROUPS.map((group,gi)=>{
+            const groupBoats=fleet.boats.filter(b=>getBoatGroup(b.name)===group);
+            if(groupBoats.length===0) return null;
             return (
-              <button key={b.id}
-                className={"boat-btn "+(b.id===selectedId&&view==="fleet"?"active":"")}
-                onClick={()=>{setSelectedId(b.id);setView("fleet");setTab("maintenance");}}>
-                <span style={{fontSize:14}}>{op?"🟢":"🔴"}</span>
-                <div style={{textAlign:"right"}}>
-                  <div className="boat-name">{b.name}</div>
-                </div>
-              </button>
+              <React.Fragment key={group}>
+                {gi>0&&<div style={{height:"0.5px",background:"var(--navy3)",margin:"6px 0"}}/>}
+                <div className="fleet-label">{group}</div>
+                {groupBoats.map(b=>{
+                  const lm=[...(b.maintenance||[])].sort((a,c)=>c.date.localeCompare(a.date))[0];
+                  const op=lm?lm.operable!==false:true;
+                  return (
+                    <button key={b.id}
+                      className={"boat-btn "+(b.id===selectedId&&view==="fleet"?"active":"")}
+                      onClick={()=>{setSelectedId(b.id);setView("fleet");setTab("maintenance");}}>
+                      <span style={{fontSize:14}}>{op?"🟢":"🔴"}</span>
+                      <div style={{textAlign:"right"}}>
+                        <div className="boat-name">{b.name}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </React.Fragment>
             );
           })}
           <button className="add-boat-btn" onClick={()=>setModal({type:"boat"})}>+ הוסף כלי שיט</button>
