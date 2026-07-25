@@ -433,7 +433,7 @@ function PermitModal({ entry, onSave, onClose }) {
 }
 
 function SailingModal({ entry, onSave, onClose }) {
-  const [form, setForm] = useState(entry||{site:"",date:today(),startTime:"",finishTime:"",crew:"",notes:"",folderLink:""});
+  const [form, setForm] = useState(entry||{site:"",date:today(),startTime:"",finishTime:"",crew:"",seaCondition:"",trialManager:"",yellowRcOperator:"",controlStationOperator:"",notes:"",folderLink:""});
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
   const start=parseFloat(form.startTime)||0;
   const end=parseFloat(form.finishTime)||0;
@@ -450,6 +450,12 @@ function SailingModal({ entry, onSave, onClose }) {
         <div className="field"><label>זמן הפעלה (שע׳)</label><input value={diff} readOnly style={{background:"var(--navy3)",color:"var(--orange2)",fontFamily:"var(--mono)",direction:"ltr",textAlign:"center"}}/></div>
       </div>
       <div className="field"><label>צוות</label><input value={form.crew} onChange={e=>f("crew",e.target.value)}/></div>
+      <div className="field"><label>מצב ים</label><input value={form.seaCondition||""} onChange={e=>f("seaCondition",e.target.value)} placeholder="למשל: גל 0.5מ׳, רוח 10 קשר..."/></div>
+      <div className="grid3">
+        <div className="field"><label>מנהל ניסוי</label><input value={form.trialManager||""} onChange={e=>f("trialManager",e.target.value)}/></div>
+        <div className="field"><label>מפעיל שלט צהוב</label><input value={form.yellowRcOperator||""} onChange={e=>f("yellowRcOperator",e.target.value)}/></div>
+        <div className="field"><label>מפעיל עמדת שליטה</label><input value={form.controlStationOperator||""} onChange={e=>f("controlStationOperator",e.target.value)}/></div>
+      </div>
       <div className="field"><label>פירוט כללי / אירוע חשוב לציון</label><textarea value={form.notes||""} onChange={e=>f("notes",e.target.value)} style={{minHeight:"60px"}}/></div>
       <div className="field"><label>לינק לתיקייה</label><input value={form.folderLink||""} onChange={e=>f("folderLink",e.target.value)} placeholder="הדבק לינק לGoogle Drive / Docs..." style={{direction:"ltr",textAlign:"left"}}/></div>
       <div className="modal-actions">
