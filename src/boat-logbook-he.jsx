@@ -433,11 +433,14 @@ function PermitModal({ entry, onSave, onClose }) {
 }
 
 function SailingModal({ entry, onSave, onClose }) {
-  const [form, setForm] = useState(entry||{site:"",date:today(),startTime:"",finishTime:"",crew:"",seaCondition:"",trialManager:"",yellowRcOperator:"",controlStationOperator:"",notes:"",folderLink:""});
+  const [form, setForm] = useState(entry||{site:"",date:today(),startTime:"",finishTime:"",seaCondition:"",skipper:"",safetyOfficer:"",engineer:"",trialManager:"",operations:[{yellowRc:"",controlStation:""}],notes:"",folderLink:""});
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
   const start=parseFloat(form.startTime)||0;
   const end=parseFloat(form.finishTime)||0;
   const diff=end>start?(end-start).toFixed(1):"—";
+  const addOp=()=>setForm(p=>({...p,operations:[...(p.operations||[]),{yellowRc:"",controlStation:""}]}));
+  const removeOp=(i)=>setForm(p=>({...p,operations:p.operations.filter((_,j)=>j!==i)}));
+  const setOp=(i,k,v)=>setForm(p=>({...p,operations:p.operations.map((op,j)=>j===i?{...op,[k]:v}:op)}));
   return (
     <Modal title={entry?"עריכת הפלגה":"הפלגה חדשה"} onClose={onClose}>
       <div className="grid2">
@@ -449,13 +452,29 @@ function SailingModal({ entry, onSave, onClose }) {
         <div className="field"><label>שעות מנוע סיום</label><input value={form.finishTime} onChange={e=>f("finishTime",e.target.value)} placeholder="למשל: 45.0" style={{direction:"ltr",textAlign:"left"}}/></div>
         <div className="field"><label>זמן הפעלה (שע׳)</label><input value={diff} readOnly style={{background:"var(--navy3)",color:"var(--orange2)",fontFamily:"var(--mono)",direction:"ltr",textAlign:"center"}}/></div>
       </div>
-      <div className="field"><label>צוות</label><input value={form.crew} onChange={e=>f("crew",e.target.value)}/></div>
       <div className="field"><label>מצב ים</label><input value={form.seaCondition||""} onChange={e=>f("seaCondition",e.target.value)} placeholder="למשל: גל 0.5מ׳, רוח 10 קשר..."/></div>
       <div className="grid3">
-        <div className="field"><label>מנהל ניסוי</label><input value={form.trialManager||""} onChange={e=>f("trialManager",e.target.value)}/></div>
-        <div className="field"><label>מפעיל שלט צהוב</label><input value={form.yellowRcOperator||""} onChange={e=>f("yellowRcOperator",e.target.value)}/></div>
-        <div className="field"><label>מפעיל עמדת שליטה</label><input value={form.controlStationOperator||""} onChange={e=>f("controlStationOperator",e.target.value)}/></div>
+        <div className="field"><label>סקיפר</label><input value={form.skipper||""} onChange={e=>f("skipper",e.target.value)}/></div>
+        <div className="field"><label>אחראי בטיחות</label><input value={form.safetyOfficer||""} onChange={e=>f("safetyOfficer",e.target.value)}/></div>
+        <div className="field"><label>מהנדס</label><input value={form.engineer||""} onChange={e=>f("engineer",e.target.value)}/></div>
       </div>
+      <div className="field"><label>מנהל ניסוי</label><input value={form.trialManager||""} onChange={e=>f("trialManager",e.target.value)}/></div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"0.5px solid var(--navy3)",paddingTop:12,marginTop:4,marginBottom:8}}>
+        <span style={{fontSize:12,fontWeight:600,color:"var(--slate)"}}>צוות תפעול</span>
+        <button onClick={addOp} style={{fontSize:11,color:"var(--orange2)",background:"rgba(232,83,10,.1)",border:"1px solid rgba(232,83,10,.3)",borderRadius:4,padding:"3px 10px",cursor:"pointer"}}>+ הוסף הפעלה</button>
+      </div>
+      {(form.operations||[]).map((op,i)=>(
+        <div key={i} style={{background:"var(--navy2)",border:"0.5px solid var(--navy3)",borderRadius:6,padding:"10px 12px",marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <span style={{fontSize:11,fontWeight:600,color:"var(--slate)"}}>הפעלה {i+1}</span>
+            {(form.operations||[]).length>1&&<button onClick={()=>removeOp(i)} style={{fontSize:11,color:"var(--red)",background:"transparent",border:"none",cursor:"pointer"}}>✕</button>}
+          </div>
+          <div className="grid2">
+            <div className="field"><label>מפעיל שלט צהוב</label><input value={op.yellowRc||""} onChange={e=>setOp(i,"yellowRc",e.target.value)}/></div>
+            <div className="field"><label>מפעיל עמדת שליטה</label><input value={op.controlStation||""} onChange={e=>setOp(i,"controlStation",e.target.value)}/></div>
+          </div>
+        </div>
+      ))}
       <div className="field"><label>פירוט כללי / אירוע חשוב לציון</label><textarea value={form.notes||""} onChange={e=>f("notes",e.target.value)} style={{minHeight:"60px"}}/></div>
       <div className="field"><label>לינק לתיקייה</label><input value={form.folderLink||""} onChange={e=>f("folderLink",e.target.value)} placeholder="הדבק לינק לGoogle Drive / Docs..." style={{direction:"ltr",textAlign:"left"}}/></div>
       <div className="modal-actions">
