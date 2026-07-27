@@ -347,7 +347,7 @@ function BoatModal({ boat, onSave, onClose }) {
   );
 }
 
-function MaintModal({ entry, onSave, onClose, dualEngine }) {
+function MaintModal({ entry, onSave, onClose, noEngine, dualEngine }) {
   const [form, setForm] = useState(entry||{date:today(),name:"",mtype:"תחזוקה",domain:"פלטפורמה",engineWork:"",engineWorkLeft:"",action:"",closing:"",followUp:"",notes:"",operable:true});
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
   return (
@@ -379,7 +379,7 @@ function MaintModal({ entry, onSave, onClose, dualEngine }) {
           </label>
         </div>
       </div>
-      {dualEngine ? (
+      {!noEngine && (dualEngine ? (
         <div className="grid2">
           <div className="field" style={{border:"1px solid var(--orange)",borderRadius:6,padding:"10px 12px"}}>
             <label style={{color:"var(--orange2)",fontWeight:700}}>⚙️ זמן עבודה מנוע ימין (שע׳)</label>
@@ -394,7 +394,7 @@ function MaintModal({ entry, onSave, onClose, dualEngine }) {
         <div className="grid2">
           <div className="field"><label>זמן עבודת מנוע (שע׳)</label><input value={form.engineWork||""} onChange={e=>f("engineWork",e.target.value)} placeholder='למשל: 2.5'/></div>
         </div>
-      )}
+      ))}
       <div className="field"><label>תיאור הפעילות</label><textarea value={form.action} onChange={e=>f("action",e.target.value)}/></div>
       <div className="field"><label>פרטי הפעולה / התיקון וסגירה</label><textarea value={form.closing} onChange={e=>f("closing",e.target.value)}/></div>
       <div className="field"><label>משימות לביצוע</label><textarea value={form.followUp} onChange={e=>f("followUp",e.target.value)} style={{minHeight:"50px"}}/></div>
@@ -432,12 +432,9 @@ function PermitModal({ entry, onSave, onClose }) {
   );
 }
 
-function SailingModal({ entry, onSave, onClose }) {
-  const [form, setForm] = useState(entry||{site:"",date:today(),startTime:"",finishTime:"",seaCondition:"",skipper:"",safetyOfficer:"",engineer:"",trialManager:"",operations:[{yellowRc:"",controlStation:""}],notes:"",folderLink:""});
+function SailingModal({ entry, onSave, onClose, dualEngine }) {
+  const [form, setForm] = useState(entry||{site:"",date:today(),engineHours:"",engineHoursLeft:"",seaCondition:"",skipper:"",safetyOfficer:"",engineer:"",trialManager:"",operations:[{yellowRc:"",controlStation:""}],notes:"",folderLink:""});
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
-  const start=parseFloat(form.startTime)||0;
-  const end=parseFloat(form.finishTime)||0;
-  const diff=end>start?(end-start).toFixed(1):"—";
   const addOp=()=>setForm(p=>({...p,operations:[...(p.operations||[]),{yellowRc:"",controlStation:""}]}));
   const removeOp=(i)=>setForm(p=>({...p,operations:p.operations.filter((_,j)=>j!==i)}));
   const setOp=(i,k,v)=>setForm(p=>({...p,operations:p.operations.map((op,j)=>j===i?{...op,[k]:v}:op)}));
@@ -447,11 +444,16 @@ function SailingModal({ entry, onSave, onClose }) {
         <div className="field"><label>אתר / מיקום</label><input value={form.site} onChange={e=>f("site",e.target.value)}/></div>
         <div className="field"><label>תאריך</label><input type="date" value={form.date} onChange={e=>f("date",e.target.value)}/></div>
       </div>
-      <div className="grid3">
-        <div className="field"><label>שעות מנוע התחלה</label><input value={form.startTime} onChange={e=>f("startTime",e.target.value)} placeholder="למשל: 42.5" style={{direction:"ltr",textAlign:"left"}}/></div>
-        <div className="field"><label>שעות מנוע סיום</label><input value={form.finishTime} onChange={e=>f("finishTime",e.target.value)} placeholder="למשל: 45.0" style={{direction:"ltr",textAlign:"left"}}/></div>
-        <div className="field"><label>זמן הפעלה (שע׳)</label><input value={diff} readOnly style={{background:"var(--navy3)",color:"var(--orange2)",fontFamily:"var(--mono)",direction:"ltr",textAlign:"center"}}/></div>
-      </div>
+      {dualEngine ? (
+        <div className="grid2">
+          <div className="field"><label>סה"כ שעות מנוע ימין (שע׳)</label><input value={form.engineHours||""} onChange={e=>f("engineHours",e.target.value)} placeholder="למשל: 2.5" style={{direction:"ltr",textAlign:"left"}}/></div>
+          <div className="field"><label>סה"כ שעות מנוע שמאל (שע׳)</label><input value={form.engineHoursLeft||""} onChange={e=>f("engineHoursLeft",e.target.value)} placeholder="למשל: 2.5" style={{direction:"ltr",textAlign:"left"}}/></div>
+        </div>
+      ) : (
+        <div className="grid2">
+          <div className="field"><label>סה"כ שעות מנוע (שע׳)</label><input value={form.engineHours||""} onChange={e=>f("engineHours",e.target.value)} placeholder="למשל: 2.5" style={{direction:"ltr",textAlign:"left"}}/></div>
+        </div>
+      )}
       <div className="field"><label>מצב ים</label><input value={form.seaCondition||""} onChange={e=>f("seaCondition",e.target.value)} placeholder="למשל: גל 0.5מ׳, רוח 10 קשר..."/></div>
       <div className="grid3">
         <div className="field"><label>סקיפר</label><input value={form.skipper||""} onChange={e=>f("skipper",e.target.value)}/></div>
@@ -1284,29 +1286,21 @@ export default function App() {
   };
 
   const totalSailingMins=boat?(boat.sailing||[]).reduce((acc,s)=>acc+tripMins(s),0):0;
-  const totalSailingHours=(boat?.sailing||[]).reduce((acc,s)=>{
-    const start=parseFloat(s.startTime)||0;
-    const end=parseFloat(s.finishTime)||0;
-    return acc+(end>start?end-start:0);
-  },0);
-  // Add engine hours from maintenance records
-  const isDualEngine=!!(boat?.name?.toLowerCase().includes("tiger"));
+  const totalSailingHours=(boat?.sailing||[]).reduce((acc,s)=>acc+(parseFloat(s.engineHours)||0),0);
+  const totalSailingHoursLeft=(boat?.sailing||[]).reduce((acc,s)=>acc+(parseFloat(s.engineHoursLeft)||0),0);
+  // Engine hours — only for כלי שיט group
+  const showEngine = getBoatGroup(boat?.name) === "כלי שיט";
+  const isDualEngine = showEngine && !!(boat?.name?.toLowerCase().includes("tiger"));
   const maintEngineHours=(boat?.maintenance||[]).reduce((acc,m)=>{
-    const end=parseFloat(m.engineWork)||0;
-    return acc+(end>0?end:0);
+    const v=parseFloat(m.engineWork)||0; return acc+(v>0?v:0);
   },0);
   const maintEngineHoursLeft=(boat?.maintenance||[]).reduce((acc,m)=>{
-    const end=parseFloat(m.engineWorkLeft)||0;
-    return acc+(end>0?end:0);
+    const v=parseFloat(m.engineWorkLeft)||0; return acc+(v>0?v:0);
   },0);
   const totalEngineHours=totalSailingHours+maintEngineHours;
-  const totalEngineHoursLeft=totalSailingHours+maintEngineHoursLeft;
-  const engineUsed=boat&&boat._engineResetAt!=null
-    ?(totalEngineHours-boat._engineResetAt)%10
-    :totalEngineHours%10;
-  const engineUsedLeft=boat&&boat._engineResetAtLeft!=null
-    ?(totalEngineHoursLeft-boat._engineResetAtLeft)%10
-    :totalEngineHoursLeft%10;
+  const totalEngineHoursLeft=totalSailingHoursLeft+maintEngineHoursLeft;
+  const engineUsed=boat&&boat._engineResetAt!=null?(totalEngineHours-boat._engineResetAt)%10:totalEngineHours%10;
+  const engineUsedLeft=boat&&boat._engineResetAtLeft!=null?(totalEngineHoursLeft-boat._engineResetAtLeft)%10:totalEngineHoursLeft%10;
   const engineRemaining=Math.max(0,10-engineUsed);
   const engineRemainingLeft=Math.max(0,10-engineUsedLeft);
   const enginePct=(engineRemaining/10)*100;
@@ -1469,6 +1463,7 @@ export default function App() {
             <div className="content">
 
               {tab==="maintenance" && (<>
+                {showEngine && (
                 <div className="engine-bar" style={{flexWrap:"wrap",gap:16}}>
                   <div className="engine-gauge-wrap">
                     <div className="engine-gauge-label">
@@ -1510,19 +1505,20 @@ export default function App() {
                     {isDualEngine&&<button className="engine-reset-btn" onClick={resetEngineHoursLeft}>↺ אפס שמאל</button>}
                   </div>
                 </div>
+                )}
                 <div className="section-header">
                   <div className="section-title">פעילות תחזוקה</div>
                   <button className="action-btn" onClick={()=>setModal({type:"maint"})}>+ רשומה חדשה</button>
                 </div>
                 <div ref={maintTblWrapRef} style={{overflowX:"auto"}} onScroll={e=>{if(maintSbarRef.current)maintSbarRef.current.scrollLeft=e.target.scrollLeft;}}>
-                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:isDualEngine?1340:1260}}>
+                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:isDualEngine?1340:showEngine?1260:1160}}>
                     <thead><tr>
                       <th style={{width:90}}>תאריך</th>
                       <th style={{width:90}}>איש צוות</th>
                       <th style={{width:72}}>סוג</th>
                       <th style={{width:80}}>תחום</th>
                       <th style={{width:72}}>כשירות</th>
-                      {isDualEngine?(<><th style={{width:90}}>מנוע ימין</th><th style={{width:90}}>מנוע שמאל</th></>):<th style={{width:100}}>זמן עבודת מנוע</th>}
+                      {isDualEngine?(<><th style={{width:90}}>מנוע ימין</th><th style={{width:90}}>מנוע שמאל</th></>):showEngine&&<th style={{width:100}}>זמן עבודת מנוע</th>}
                       <th style={{width:200}}>תיאור הפעילות</th>
                       <th style={{width:200}}>פרטי פעולה</th>
                       <th style={{width:150}}>משימות לביצוע</th>
@@ -1540,7 +1536,7 @@ export default function App() {
                             <td><span className="pill" style={{background:c.bg,border:"1px solid "+c.border,color:c.color}}>{m.mtype}</span></td>
                             <td><span className="domain-pill">{m.domain||"—"}</span></td>
                             <td><span className={"pill "+(op2?"operable-yes":"operable-no")} style={{fontSize:10}}>{op2?"שמיש":"לא שמיש"}</span></td>
-                            {isDualEngine?(<><td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td><td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWorkLeft||"—"}</td></>):<td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td>}
+                            {isDualEngine?(<><td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td><td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWorkLeft||"—"}</td></>):showEngine&&<td className="mono" style={{whiteSpace:"nowrap",color:"var(--orange2)",fontWeight:700}}>{m.engineWork||"—"}</td>}
                             <td style={{maxWidth:180,minWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={m.action||""}>{m.action||"—"}</td>
                             <td style={{minWidth:100,wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{m.closing||"—"}</td>
                             <td style={{minWidth:100,fontSize:12,color:"var(--orange2)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{m.followUp||"—"}</td>
@@ -1841,9 +1837,9 @@ export default function App() {
 
       {confirm && <ConfirmModal msg={confirm.msg} onYes={()=>{confirm.onYes();setConfirm(null);}} onNo={()=>setConfirm(null)}/>}
       {modal?.type==="boat"     &&<BoatModal     boat={modal.data}  onSave={saveBoat}                    onClose={()=>setModal(null)}/>}
-      {modal?.type==="maint"    &&<MaintModal    entry={modal.data} onSave={listSave("maintenance","m")} onClose={()=>setModal(null)} dualEngine={!!(boat?.name?.toLowerCase().includes("tiger"))}/>}
+      {modal?.type==="maint"    &&<MaintModal    entry={modal.data} onSave={listSave("maintenance","m")} onClose={()=>setModal(null)} noEngine={!showEngine} dualEngine={isDualEngine}/>}
       {modal?.type==="permit"   &&<PermitModal   entry={modal.data} onSave={listSave("permits","p")}     onClose={()=>setModal(null)}/>}
-      {modal?.type==="sailing"  &&<SailingModal  entry={modal.data} onSave={listSave("sailing","s")}     onClose={()=>setModal(null)}/>}
+      {modal?.type==="sailing"  &&<SailingModal  entry={modal.data} onSave={listSave("sailing","s")}     onClose={()=>setModal(null)} dualEngine={isDualEngine}/>}
       {modal?.type==="lruTrack" &&<LruTrackModal entry={modal.data} onSave={listSave("lruTrack","lr")}   onClose={()=>setModal(null)}/>}
       {modal?.type==="lruSw"    &&<LruSwModal    entry={modal.swEntry} lruType={modal.lruType}
                                    onSave={(form)=>saveSwVersion(modal.lruId,form)} onClose={()=>setModal(null)}/>}
