@@ -330,6 +330,7 @@ function BoatModal({ boat, onSave, onClose }) {
       </div>
       <div style={{fontWeight:600,fontSize:13,color:"var(--orange2)",marginTop:8}}>🚛 עגלה</div>
       <div className="grid3">
+        <div className="field"><label>מספר עגלה</label><input value={form.trailerNumber||""} onChange={e=>f("trailerNumber",e.target.value)} placeholder="למשל: 12-345-67" style={{direction:"ltr",textAlign:"left"}}/></div>
         <div className="field"><label>תוקף רישיון</label><input type="date" value={form.trailerLicenseExpiry||""} onChange={e=>f("trailerLicenseExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
         <div className="field"><label>תוקף ביטוח</label><input type="date" value={form.trailerInsuranceExpiry||""} onChange={e=>f("trailerInsuranceExpiry",e.target.value)} style={{direction:"ltr",textAlign:"left"}}/></div>
       </div>
@@ -1804,7 +1805,7 @@ export default function App() {
                   <span style={{fontFamily:"var(--mono)",fontSize:13,fontWeight:700,color:expiryColor(dateStr)}}>{dateStr}{expiryColor(dateStr)==="#e53935"?" ⚠":""}</span>
                 </div>):null;
                 const hasBoat=boat.licenseExpiry||boat.insuranceExpiry;
-                const hasTrailer=boat.trailerLicenseExpiry||boat.trailerInsuranceExpiry;
+                const hasTrailer=boat.trailerLicenseExpiry||boat.trailerInsuranceExpiry||boat.trailerNumber;
                 return(<>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,padding:24}}>
                     {hasBoat&&(<div style={{background:"var(--navy2)",border:"0.5px solid var(--navy3)",borderRadius:8,padding:"14px 18px"}}>
@@ -1813,7 +1814,7 @@ export default function App() {
                       <ExpiryRow label="ביטוח" dateStr={boat.insuranceExpiry}/>
                     </div>)}
                     {hasTrailer&&(<div style={{background:"var(--navy2)",border:"0.5px solid var(--navy3)",borderRadius:8,padding:"14px 18px"}}>
-                      <div style={{fontSize:13,color:"var(--orange2)",fontWeight:600,marginBottom:10}}>🚛 עגלה</div>
+                      <div style={{fontSize:13,color:"var(--orange2)",fontWeight:600,marginBottom:10}}>🚛 עגלה{boat.trailerNumber&&<span style={{fontFamily:"var(--mono)",fontSize:12,color:"var(--fog)",fontWeight:400,marginRight:8}}>{boat.trailerNumber}</span>}</div>
                       <ExpiryRow label="רישיון" dateStr={boat.trailerLicenseExpiry}/>
                       <ExpiryRow label="ביטוח" dateStr={boat.trailerInsuranceExpiry}/>
                     </div>)}
