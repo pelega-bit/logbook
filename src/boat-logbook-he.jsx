@@ -85,6 +85,7 @@ const localISO = (d) => {
 const today = () => localISO(new Date());
 const MAINT_TYPES   = ["תחזוקה","תקלה","בדיקה","תיקון","שדרוג","אחר"];
 const MAINT_DOMAINS = ["פלטפורמה","חשמל","בקרה נמוכה","בקרה גבוהה","בטיחות","כללי"];
+const FAULT_DOMAINS = ["מכאני","חשמל","תקשורת","תוכנה","ניווט","בטיחות","פלטפורמה","אחר"];
 const SCHEDULE_ACTIVITIES = ["ים","בריכה","תחזוקה","הכנות","מסירה","בדיקה","ביקור","פנוי","אחר"];
 const ACTIVITY_COLORS = {
   "ים":      { bg:"rgba(74,144,226,.2)",  border:"#4a90e2", color:"#6baaff" },
@@ -140,6 +141,7 @@ const TABS = [
   {id:"maintenance", label:"פעילות תחזוקה"},
   {id:"permits",     label:"היתרים"},
   {id:"sailing",     label:"לוג הפלגות"},
+  {id:"faults",      label:"תקלות"},
   {id:"lruTrack",    label:"מעקב LRU"},
   {id:"schedule",    label:'לו"ז כלי'},
   {id:"info",        label:"מידע כללי"},
@@ -482,6 +484,34 @@ function SailingModal({ entry, onSave, onClose, dualEngine }) {
       <div className="field"><label>לינק לתיקייה</label><input value={form.folderLink||""} onChange={e=>f("folderLink",e.target.value)} placeholder="הדבק לינק לGoogle Drive / Docs..." style={{direction:"ltr",textAlign:"left"}}/></div>
       <div className="modal-actions">
         <button className="btn-save" onClick={()=>form.site&&onSave(form)}>שמור</button>
+        <button className="btn-cancel" onClick={onClose}>ביטול</button>
+      </div>
+    </Modal>
+  );
+}
+
+function FaultModal({ entry, onSave, onClose }) {
+  const [form, setForm] = useState(entry||{date:today(),name:"",domain:"",componentName:"",faultDesc:"",fieldAction:"",followUp:"",notes:""});
+  const f=(k,v)=>setForm(p=>({...p,[k]:v}));
+  return (
+    <Modal title={entry?"עריכת תקלה":"תקלה חדשה"} onClose={onClose}>
+      <div className="grid3">
+        <div className="field"><label>תאריך</label><input type="date" value={form.date} onChange={e=>f("date",e.target.value)}/></div>
+        <div className="field"><label>איש צוות</label><input value={form.name||""} onChange={e=>f("name",e.target.value)}/></div>
+        <div className="field"><label>תחום</label>
+          <select value={form.domain||""} onChange={e=>f("domain",e.target.value)}>
+            <option value="">בחר...</option>
+            {FAULT_DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="field"><label>שם רכיב</label><input value={form.componentName||""} onChange={e=>f("componentName",e.target.value)} placeholder="למשל: מודם ים, הגה, GPS..."/></div>
+      <div className="field"><label>תיאור תקלה</label><textarea value={form.faultDesc||""} onChange={e=>f("faultDesc",e.target.value)} style={{minHeight:"60px"}}/></div>
+      <div className="field"><label>פירוט מה נעשה בשטח</label><textarea value={form.fieldAction||""} onChange={e=>f("fieldAction",e.target.value)} style={{minHeight:"50px"}}/></div>
+      <div className="field"><label>משימות להמשך</label><textarea value={form.followUp||""} onChange={e=>f("followUp",e.target.value)} style={{minHeight:"46px"}}/></div>
+      <div className="field"><label>הערות</label><textarea value={form.notes||""} onChange={e=>f("notes",e.target.value)} style={{minHeight:"46px"}}/></div>
+      <div className="modal-actions">
+        <button className="btn-save" onClick={()=>onSave(form)}>שמור</button>
         <button className="btn-cancel" onClick={onClose}>ביטול</button>
       </div>
     </Modal>
@@ -1290,7 +1320,7 @@ export default function App() {
   const totalSailingHours=(boat?.sailing||[]).reduce((acc,s)=>acc+(parseFloat(s.engineHours)||0),0);
   const totalSailingHoursLeft=(boat?.sailing||[]).reduce((acc,s)=>acc+(parseFloat(s.engineHoursLeft)||0),0);
   // Engine hours — only for כלי שיט group
-  const showEngine = getBoatGroup(boat?.name) === "כלי שיט";
+  const showEngine = getBoatGroup(boat?.name) === "כלי שיט" && !boat?.name?.toLowerCase().includes("stingray");
   const isDualEngine = showEngine && !!(boat?.name?.toLowerCase().includes("tiger"));
   const maintEngineHours=(boat?.maintenance||[]).reduce((acc,m)=>{
     const v=parseFloat(m.engineWork)||0; return acc+(v>0?v:0);
@@ -1620,6 +1650,47 @@ export default function App() {
                 {(boat.sailing||[]).length===0&&<div className="empty">אין הפלגות רשומות עדיין.</div>}
               </>)}
 
+              {tab==="faults" && (<>
+                <div className="section-header">
+                  <div className="section-title">תקלות</div>
+                  <button className="action-btn" onClick={()=>setModal({type:"fault"})}>+ תקלה חדשה</button>
+                </div>
+                <div style={{overflowX:"auto"}}>
+                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1100}}>
+                    <thead><tr>
+                      <th style={{width:90}}>תאריך</th>
+                      <th style={{width:90}}>איש צוות</th>
+                      <th style={{width:80}}>תחום</th>
+                      <th style={{width:110}}>שם רכיב</th>
+                      <th style={{width:180}}>תיאור תקלה</th>
+                      <th style={{width:180}}>מה נעשה בשטח</th>
+                      <th style={{width:150}}>משימות להמשך</th>
+                      <th style={{width:150}}>הערות</th>
+                      <th style={{width:58}}></th>
+                    </tr></thead>
+                    <tbody>
+                      {(boat.faults||[]).map(ft=>(
+                        <tr key={ft.id}>
+                          <td className="mono" style={{whiteSpace:"nowrap"}}>{ft.date}</td>
+                          <td style={{whiteSpace:"nowrap"}}>{ft.name||"—"}</td>
+                          <td><span className="domain-pill">{ft.domain||"—"}</span></td>
+                          <td style={{fontWeight:600,color:"var(--white)"}}>{ft.componentName||"—"}</td>
+                          <td style={{fontSize:12,wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.faultDesc||"—"}</td>
+                          <td style={{fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.fieldAction||"—"}</td>
+                          <td style={{fontSize:12,color:"var(--orange2)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.followUp||"—"}</td>
+                          <td style={{fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.notes||"—"}</td>
+                          <td><div style={{display:"flex",gap:5}}>
+                            <button className="icon-btn" onClick={()=>setModal({type:"fault",data:ft})}>&#9999;</button>
+                            <button className="delete-btn" onClick={()=>setConfirm({msg:"האם אתה בטוח שברצונך למחוק תקלה זו?",onYes:()=>listDel("faults",ft.id)})}>&#x2715;</button>
+                          </div></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {(boat.faults||[]).length===0&&<div className="empty">אין תקלות רשומות עדיין.</div>}
+              </>)}
+
               {tab==="lruTrack" && (<>
                 <div className="section-header">
                   <div className="section-title">מעקב LRU</div>
@@ -1841,6 +1912,7 @@ export default function App() {
       {modal?.type==="maint"    &&<MaintModal    entry={modal.data} onSave={listSave("maintenance","m")} onClose={()=>setModal(null)} noEngine={!showEngine} dualEngine={isDualEngine}/>}
       {modal?.type==="permit"   &&<PermitModal   entry={modal.data} onSave={listSave("permits","p")}     onClose={()=>setModal(null)}/>}
       {modal?.type==="sailing"  &&<SailingModal  entry={modal.data} onSave={listSave("sailing","s")}     onClose={()=>setModal(null)} dualEngine={isDualEngine}/>}
+      {modal?.type==="fault"    &&<FaultModal    entry={modal.data} onSave={listSave("faults","ft")}     onClose={()=>setModal(null)}/>}
       {modal?.type==="lruTrack" &&<LruTrackModal entry={modal.data} onSave={listSave("lruTrack","lr")}   onClose={()=>setModal(null)}/>}
       {modal?.type==="lruSw"    &&<LruSwModal    entry={modal.swEntry} lruType={modal.lruType}
                                    onSave={(form)=>saveSwVersion(modal.lruId,form)} onClose={()=>setModal(null)}/>}
