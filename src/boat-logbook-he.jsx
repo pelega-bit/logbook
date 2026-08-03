@@ -1725,14 +1725,10 @@ export default function App() {
                               <td style={{fontSize:12,wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.faultDesc||"—"}</td>
                               <td style={{fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.fieldAction||"—"}</td>
                               <td>
-                                {isApprover?(
-                                  <select value={ft.priority||"לא מסווג"} onChange={e=>setPriority(ft,e.target.value)}
-                                    style={{...priorityStyle(ft.priority||"לא מסווג"),fontSize:11,borderRadius:4,padding:"3px 6px",cursor:"pointer",width:"100%"}}>
-                                    {PRIORITIES.map(p=><option key={p}>{p}</option>)}
-                                  </select>
-                                ):(
-                                  <span className="pill" style={{...priorityStyle(ft.priority||"לא מסווג"),fontSize:10}}>{ft.priority||"לא מסווג"}</span>
-                                )}
+                                <select value={ft.priority||"לא מסווג"} onChange={e=>setPriority(ft,e.target.value)}
+                                  style={{...priorityStyle(ft.priority||"לא מסווג"),fontSize:11,borderRadius:4,padding:"3px 6px",cursor:"pointer",width:"100%"}}>
+                                  {PRIORITIES.map(p=><option key={p}>{p}</option>)}
+                                </select>
                               </td>
                               <td style={{fontSize:12,color:"var(--orange2)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.followUp||"—"}</td>
                               <td style={{fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.notes||"—"}</td>
