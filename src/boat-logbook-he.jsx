@@ -491,7 +491,7 @@ function SailingModal({ entry, onSave, onClose, dualEngine }) {
 }
 
 function FaultModal({ entry, onSave, onClose }) {
-  const [form, setForm] = useState(entry||{date:today(),name:"",domain:"",componentName:"",faultDesc:"",fieldAction:"",followUp:"",notes:""});
+  const [form, setForm] = useState(entry||{date:today(),name:"",source:"",domain:"",componentName:"",faultDesc:"",fieldAction:"",followUp:"",notes:"",priority:"לא מסווג",status:"פתוח"});
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
   return (
     <Modal title={entry?"עריכת תקלה":"תקלה חדשה"} onClose={onClose}>
@@ -505,6 +505,7 @@ function FaultModal({ entry, onSave, onClose }) {
           </select>
         </div>
       </div>
+      <div className="field"><label>מקור (ניסוי / אירוע)</label><input value={form.source||""} onChange={e=>f("source",e.target.value)} placeholder='למשל: ניסוי ים 28/7, בדיקת האנגר 2/8...'/></div>
       <div className="field"><label>שם רכיב</label><input value={form.componentName||""} onChange={e=>f("componentName",e.target.value)} placeholder="למשל: מודם ים, הגה, GPS..."/></div>
       <div className="field"><label>תיאור תקלה</label><textarea value={form.faultDesc||""} onChange={e=>f("faultDesc",e.target.value)} style={{minHeight:"60px"}}/></div>
       <div className="field"><label>פירוט מה נעשה בשטח</label><textarea value={form.fieldAction||""} onChange={e=>f("fieldAction",e.target.value)} style={{minHeight:"50px"}}/></div>
@@ -1650,46 +1651,104 @@ export default function App() {
                 {(boat.sailing||[]).length===0&&<div className="empty">אין הפלגות רשומות עדיין.</div>}
               </>)}
 
-              {tab==="faults" && (<>
-                <div className="section-header">
-                  <div className="section-title">תקלות</div>
-                  <button className="action-btn" onClick={()=>setModal({type:"fault"})}>+ תקלה חדשה</button>
-                </div>
-                <div style={{overflowX:"auto"}}>
-                  <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1100}}>
-                    <thead><tr>
-                      <th style={{width:90}}>תאריך</th>
-                      <th style={{width:90}}>איש צוות</th>
-                      <th style={{width:80}}>תחום</th>
-                      <th style={{width:110}}>שם רכיב</th>
-                      <th style={{width:180}}>תיאור תקלה</th>
-                      <th style={{width:180}}>מה נעשה בשטח</th>
-                      <th style={{width:150}}>משימות להמשך</th>
-                      <th style={{width:150}}>הערות</th>
-                      <th style={{width:58}}></th>
-                    </tr></thead>
-                    <tbody>
-                      {(boat.faults||[]).map(ft=>(
-                        <tr key={ft.id}>
-                          <td className="mono" style={{whiteSpace:"nowrap"}}>{ft.date}</td>
-                          <td style={{whiteSpace:"nowrap"}}>{ft.name||"—"}</td>
-                          <td><span className="domain-pill">{ft.domain||"—"}</span></td>
-                          <td style={{fontWeight:600,color:"var(--white)"}}>{ft.componentName||"—"}</td>
-                          <td style={{fontSize:12,wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.faultDesc||"—"}</td>
-                          <td style={{fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.fieldAction||"—"}</td>
-                          <td style={{fontSize:12,color:"var(--orange2)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.followUp||"—"}</td>
-                          <td style={{fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.notes||"—"}</td>
-                          <td><div style={{display:"flex",gap:5}}>
-                            <button className="icon-btn" onClick={()=>setModal({type:"fault",data:ft})}>&#9999;</button>
-                            <button className="delete-btn" onClick={()=>setConfirm({msg:"האם אתה בטוח שברצונך למחוק תקלה זו?",onYes:()=>listDel("faults",ft.id)})}>&#x2715;</button>
-                          </div></td>
-                        </tr>
+              {tab==="faults" && (()=>{
+                const [faultFilter,setFaultFilter]=React.useState("הכל");
+                const allFaults=boat.faults||[];
+                const openNext=allFaults.filter(ft=>ft.priority==="ניסוי הבא"&&ft.status!=="טופל");
+                const filtered=faultFilter==="הכל"?allFaults
+                  :faultFilter==="ניסוי הבא"?allFaults.filter(ft=>ft.priority==="ניסוי הבא")
+                  :faultFilter==="פתוחות"?allFaults.filter(ft=>ft.status!=="טופל")
+                  :allFaults.filter(ft=>ft.status==="טופל");
+                const toggleStatus=(ft)=>{
+                  const newStatus=ft.status==="טופל"?"פתוח":"טופל";
+                  updateBoat(selectedId,b=>({...b,faults:(b.faults||[]).map(f=>f.id===ft.id?{...f,status:newStatus}:f)}));
+                };
+                const setPriority=(ft,p)=>{
+                  updateBoat(selectedId,b=>({...b,faults:(b.faults||[]).map(f=>f.id===ft.id?{...f,priority:p}:f)}));
+                };
+                const PRIORITIES=["לא מסווג","ניסוי הבא","עתיד"];
+                const priorityStyle=(p)=>p==="ניסוי הבא"
+                  ?{background:"rgba(249,115,22,.15)",border:"1px solid rgba(249,115,22,.5)",color:"var(--orange2)"}
+                  :p==="עתיד"
+                  ?{background:"rgba(99,102,241,.12)",border:"1px solid rgba(99,102,241,.4)",color:"#818cf8"}
+                  :{background:"var(--navy3)",border:"1px solid var(--navy3)",color:"var(--slate)"};
+                return (<>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 16px 8px"}}>
+                    <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                      {["הכל","ניסוי הבא","פתוחות","טופל"].map(f=>(
+                        <button key={f} onClick={()=>setFaultFilter(f)}
+                          style={{fontSize:11,padding:"4px 12px",borderRadius:4,cursor:"pointer",
+                            background:faultFilter===f?"rgba(249,115,22,.15)":"transparent",
+                            border:faultFilter===f?"1px solid rgba(249,115,22,.4)":"0.5px solid var(--navy3)",
+                            color:faultFilter===f?"var(--orange2)":"var(--slate)"}}>
+                          {f}
+                        </button>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-                {(boat.faults||[]).length===0&&<div className="empty">אין תקלות רשומות עדיין.</div>}
-              </>)}
+                      {openNext.length>0&&<span style={{fontSize:11,background:"rgba(239,68,68,.12)",border:"1px solid rgba(239,68,68,.3)",color:"#f87171",borderRadius:4,padding:"3px 9px"}}>{openNext.length} פתוחות לניסוי הבא</span>}
+                    </div>
+                    <button className="action-btn" onClick={()=>setModal({type:"fault"})}>+ תקלה חדשה</button>
+                  </div>
+                  <div style={{overflowX:"auto",padding:"0 16px 16px"}}>
+                    <table className="tbl" style={{tableLayout:"fixed",width:"100%",minWidth:1200}}>
+                      <thead><tr>
+                        <th style={{width:56}}>סטטוס</th>
+                        <th style={{width:90}}>תאריך</th>
+                        <th style={{width:90}}>איש צוות</th>
+                        <th style={{width:110}}>מקור</th>
+                        <th style={{width:72}}>תחום</th>
+                        <th style={{width:110}}>שם רכיב</th>
+                        <th style={{width:160}}>תיאור תקלה</th>
+                        <th style={{width:150}}>מה נעשה בשטח</th>
+                        <th style={{width:120}}>עדיפות</th>
+                        <th style={{width:130}}>משימות להמשך</th>
+                        <th style={{width:130}}>הערות</th>
+                        <th style={{width:50}}></th>
+                      </tr></thead>
+                      <tbody>
+                        {filtered.map(ft=>{
+                          const closed=ft.status==="טופל";
+                          return (
+                            <tr key={ft.id} style={{opacity:closed?.55:1}}>
+                              <td>
+                                <button onClick={()=>toggleStatus(ft)} title={closed?"פתח מחדש":"סמן כטופל"}
+                                  style={{width:28,height:28,borderRadius:4,border:closed?"1px solid #4ade80":"1px solid var(--navy3)",
+                                    background:closed?"rgba(74,222,128,.15)":"transparent",
+                                    color:closed?"#4ade80":"var(--slate)",cursor:"pointer",fontSize:14,fontWeight:700}}>
+                                  {closed?"✓":"○"}
+                                </button>
+                              </td>
+                              <td className="mono" style={{whiteSpace:"nowrap"}}>{ft.date}</td>
+                              <td style={{whiteSpace:"nowrap",fontSize:12}}>{ft.name||"—"}</td>
+                              <td style={{fontSize:11,color:"var(--slate)"}}>{ft.source||"—"}</td>
+                              <td><span className="domain-pill">{ft.domain||"—"}</span></td>
+                              <td style={{fontWeight:600,color:"var(--white)",fontSize:12}}>{ft.componentName||"—"}</td>
+                              <td style={{fontSize:12,wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.faultDesc||"—"}</td>
+                              <td style={{fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.fieldAction||"—"}</td>
+                              <td>
+                                {isApprover?(
+                                  <select value={ft.priority||"לא מסווג"} onChange={e=>setPriority(ft,e.target.value)}
+                                    style={{...priorityStyle(ft.priority||"לא מסווג"),fontSize:11,borderRadius:4,padding:"3px 6px",cursor:"pointer",width:"100%"}}>
+                                    {PRIORITIES.map(p=><option key={p}>{p}</option>)}
+                                  </select>
+                                ):(
+                                  <span className="pill" style={{...priorityStyle(ft.priority||"לא מסווג"),fontSize:10}}>{ft.priority||"לא מסווג"}</span>
+                                )}
+                              </td>
+                              <td style={{fontSize:12,color:"var(--orange2)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.followUp||"—"}</td>
+                              <td style={{fontSize:12,color:"var(--slate)",wordBreak:"break-word",whiteSpace:"pre-wrap"}}>{ft.notes||"—"}</td>
+                              <td><div style={{display:"flex",gap:4}}>
+                                <button className="icon-btn" onClick={()=>setModal({type:"fault",data:ft})}>&#9999;</button>
+                                <button className="delete-btn" onClick={()=>setConfirm({msg:"האם אתה בטוח שברצונך למחוק תקלה זו?",onYes:()=>listDel("faults",ft.id)})}>&#x2715;</button>
+                              </div></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {filtered.length===0&&<div className="empty">אין תקלות {faultFilter!=="הכל"?"בפילטר זה":""}</div>}
+                </>);
+              })()}
 
               {tab==="lruTrack" && (<>
                 <div className="section-header">
