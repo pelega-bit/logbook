@@ -143,9 +143,11 @@ const TABS = [
   {id:"sailing",     label:"לוג הפלגות"},
   {id:"faults",      label:"תקלות"},
   {id:"lruTrack",    label:"מעקב LRU"},
+  {id:"docs",        label:"ספרות"},
   {id:"schedule",    label:'לו"ז כלי'},
   {id:"info",        label:"מידע כללי"},
 ];
+const DOC_TYPES = ["מדריך","נוהל","בד\"ח","דוח","תוכנית","אחר"];
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap');
   *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
@@ -575,6 +577,29 @@ function SchedModal({ date, entry, onSave, onClose }) {
       <div className="field"><label>הערה</label><textarea value={form.note} onChange={e=>f("note",e.target.value)} style={{minHeight:"60px"}}/></div>
       <div className="modal-actions">
         <button className="btn-save" onClick={()=>onSave(form)}>שמור</button>
+        <button className="btn-cancel" onClick={onClose}>ביטול</button>
+      </div>
+    </Modal>
+  );
+}
+
+function DocModal({ entry, onSave, onClose }) {
+  const [form, setForm] = useState(entry||{name:"",docType:"מדריך",link:"",notes:""});
+  const f=(k,v)=>setForm(p=>({...p,[k]:v}));
+  return (
+    <Modal title={entry?"עריכת מסמך":"הוספת מסמך"} onClose={onClose}>
+      <div className="grid2">
+        <div className="field"><label>שם המסמך</label><input value={form.name} onChange={e=>f("name",e.target.value)} placeholder="למשל: מדריך הפעלה v2.1"/></div>
+        <div className="field"><label>סוג</label>
+          <select value={form.docType} onChange={e=>f("docType",e.target.value)}>
+            {DOC_TYPES.map(t=><option key={t}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="field"><label>לינק (Drive / Docs)</label><input value={form.link} onChange={e=>f("link",e.target.value)} placeholder="https://drive.google.com/..." style={{direction:"ltr",textAlign:"left"}}/></div>
+      <div className="field"><label>הערות</label><input value={form.notes||""} onChange={e=>f("notes",e.target.value)} placeholder="גרסה, תאריך עדכון..."/></div>
+      <div className="modal-actions">
+        <button className="btn-save" onClick={()=>form.name&&onSave(form)}>שמור</button>
         <button className="btn-cancel" onClick={onClose}>ביטול</button>
       </div>
     </Modal>
@@ -1749,6 +1774,30 @@ export default function App() {
 
               {tab==="faults" && <FaultsTab boat={boat} selectedId={selectedId} updateBoat={updateBoat} setModal={setModal} setConfirm={setConfirm} listDel={listDel}/>}
 
+              {tab==="docs" && (<>
+                <div className="section-header">
+                  <div className="section-title">ספרות ובד"חים</div>
+                  <button className="action-btn" onClick={()=>setModal({type:"doc"})}>+ הוסף מסמך</button>
+                </div>
+                <div style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:8}}>
+                  {(boat.docs||[]).length===0&&<div className="empty">אין מסמכים עדיין.</div>}
+                  {(boat.docs||[]).map(d=>(
+                    <div key={d.id} style={{display:"flex",alignItems:"center",gap:12,background:"var(--navy2)",border:"0.5px solid var(--navy3)",borderRadius:8,padding:"12px 16px"}}>
+                      <span style={{fontSize:10,fontWeight:600,background:"var(--navy3)",color:"var(--slate)",borderRadius:4,padding:"3px 8px",whiteSpace:"nowrap"}}>{d.docType}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:600,fontSize:13,color:"var(--white)"}}>{d.name}</div>
+                        {d.notes&&<div style={{fontSize:11,color:"var(--slate)",marginTop:2}}>{d.notes}</div>}
+                      </div>
+                      {d.link
+                        ?<a href={d.link} target="_blank" rel="noreferrer" style={{color:"var(--orange2)",fontSize:12,whiteSpace:"nowrap",textDecoration:"none",border:"0.5px solid rgba(232,83,10,.4)",borderRadius:4,padding:"4px 10px"}}>פתח &#8599;</a>
+                        :<span style={{fontSize:11,color:"var(--slate)"}}>אין לינק</span>}
+                      <button className="icon-btn" onClick={()=>setModal({type:"doc",data:d})}>&#9999;</button>
+                      <button className="delete-btn" onClick={()=>setConfirm({msg:"האם אתה בטוח שברצונך למחוק מסמך זה?",onYes:()=>listDel("docs",d.id)})}>&#x2715;</button>
+                    </div>
+                  ))}
+                </div>
+              </>)}
+
               {tab==="lruTrack" && (<>
                 <div className="section-header">
                   <div className="section-title">מעקב LRU</div>
@@ -1971,6 +2020,7 @@ export default function App() {
       {modal?.type==="permit"   &&<PermitModal   entry={modal.data} onSave={listSave("permits","p")}     onClose={()=>setModal(null)}/>}
       {modal?.type==="sailing"  &&<SailingModal  entry={modal.data} onSave={listSave("sailing","s")}     onClose={()=>setModal(null)} dualEngine={isDualEngine}/>}
       {modal?.type==="fault"    &&<FaultModal    entry={modal.data} onSave={listSave("faults","ft")}     onClose={()=>setModal(null)}/>}
+      {modal?.type==="doc"      &&<DocModal      entry={modal.data} onSave={listSave("docs","d")}        onClose={()=>setModal(null)}/>}
       {modal?.type==="lruTrack" &&<LruTrackModal entry={modal.data} onSave={listSave("lruTrack","lr")}   onClose={()=>setModal(null)}/>}
       {modal?.type==="lruSw"    &&<LruSwModal    entry={modal.swEntry} lruType={modal.lruType}
                                    onSave={(form)=>saveSwVersion(modal.lruId,form)} onClose={()=>setModal(null)}/>}
