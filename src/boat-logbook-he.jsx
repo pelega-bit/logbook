@@ -1012,8 +1012,18 @@ function WeeklyView({ fleet, weekOffset, setWeekOffset }) {
 
 const GOOGLE_CLIENT_ID = "938973701988-5f0t7prb2r3fl0c7k6ukrmn17u66b9ao.apps.googleusercontent.com";
 const APPROVER_DOMAIN  = "skanarobotics.com";
+const MAINTENANCE_MODE = true;
 
 export default function App() {
+  if(MAINTENANCE_MODE) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0d1421",fontFamily:"Heebo,sans-serif",direction:"rtl"}}>
+      <div style={{textAlign:"center",color:"#94a3b8"}}>
+        <div style={{fontSize:48,marginBottom:16}}>🔧</div>
+        <div style={{fontSize:22,fontWeight:700,color:"#e2e8f0",marginBottom:8}}>האפליקציה אינה זמינה כרגע</div>
+        <div style={{fontSize:14}}>נחזור בקרוב</div>
+      </div>
+    </div>
+  );
   const [fleet,setFleet]           = useState(null);
   const [selectedId,setSelectedId] = useState(null);
   const [tab,setTab]               = useState("maintenance");
